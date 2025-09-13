@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* iNEAT-ERP Enterprise Design System */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    /* Core Enterprise Palette */
+    --background: 210 20% 98%;
+    --foreground: 222.2 84% 4.9%;
+
+    /* Cards & Surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --card-header: 210 40% 98%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Primary Brand - Professional Blue */
+    --primary: 213 78% 51%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 213 78% 46%;
+    --primary-light: 213 78% 96%;
+
+    /* Secondary - Neutral Gray */
+    --secondary: 210 11% 96%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary-hover: 210 11% 91%;
+
+    /* Muted - Subtle Background */
+    --muted: 210 11% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    /* Accent - Professional Teal */
+    --accent: 183 84% 39%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 183 84% 96%;
+
+    /* Status Colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 142 76% 96%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 38 92% 96%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-light: 0 84.2% 96%;
+
+    /* Borders & Inputs */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 213 78% 51%;
+
+    /* Enterprise Spacing & Layout */
+    --radius: 0.75rem;
+    --radius-sm: 0.5rem;
+    --radius-lg: 1rem;
+    
+    /* Shadows & Elevation */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+    --shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.1);
+
+    /* Professional Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(183 84% 44%));
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(210 20% 99%));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+    
+    /* Data Visualization Colors */
+    --chart-1: 213 78% 51%;
+    --chart-2: 183 84% 39%;
+    --chart-3: 142 76% 36%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 262 83% 58%;
+    --chart-6: 346 77% 49%;
+
+    /* Sidebar Enterprise Theme */
+    --sidebar-background: 222.2 47.4% 11.2%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 213 78% 51%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+  }
+
+  .dark {
+    /* Dark mode overrides for enterprise theme */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --primary: 213 78% 61%;
+    --secondary: 217.2 32.6% 17.5%;
+    --muted: 217.2 32.6% 17.5%;
+    --accent: 183 84% 49%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+}
+
+@layer components {
+  /* Enterprise Card Styles */
+  .enterprise-card {
+    @apply bg-gradient-card border border-border rounded-lg shadow-md hover:shadow-lg transition-all duration-200;
+  }
+
+  .kpi-card {
+    @apply enterprise-card p-6 hover:scale-[1.02] cursor-pointer;
+  }
+
+  /* Button Variants */
+  .btn-enterprise {
+    @apply bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-md hover:shadow-lg transition-all duration-200;
+  }
+
+  .btn-success {
+    @apply bg-success text-success-foreground hover:bg-success/90;
+  }
+
+  .btn-warning {
+    @apply bg-warning text-warning-foreground hover:bg-warning/90;
+  }
+
+  /* Status Badges */
+  .status-active {
+    @apply bg-success-light text-success border border-success/20 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-pending {
+    @apply bg-warning-light text-warning border border-warning/20 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-inactive {
+    @apply bg-muted text-muted-foreground border border-border px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  /* Data Grid Enhancements */
+  .data-grid {
+    @apply bg-card border border-border rounded-lg overflow-hidden shadow-sm;
+  }
+
+  .data-grid-header {
+    @apply bg-card-header border-b border-border px-4 py-3 font-medium text-sm text-muted-foreground;
+  }
+
+  .data-grid-row {
+    @apply border-b border-border hover:bg-muted/30 transition-colors;
+  }
+
+  .data-grid-cell {
+    @apply px-4 py-3 text-sm;
+  }
+
+  /* Chart Container */
+  .chart-container {
+    @apply enterprise-card p-6 h-80;
+  }
+}
