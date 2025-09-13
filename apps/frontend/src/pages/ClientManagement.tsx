@@ -1,152 +1,239 @@
-import { useState } from "react";
-import { Plus, Search, Filter, Download, MapPin, Phone, Mail } from "lucide-react";
-import { DataTable, Column } from "@/components/common/DataTable";
+import { useState, useEffect } from "react";
+import { Plus, Search, Filter, Download, Upload, Users, Phone, Mail, MapPin, Calendar, DollarSign, Edit, Eye, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-// Mock client data
-const clientData = [
-  {
-    id: 1,
-    name: "ABC Corporation",
-    type: "Commercial",
-    contact: "John Smith",
-    email: "john@abccorp.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Business Ave, City",
-    status: "Active",
-    services: ["Deep Cleaning", "Regular Maintenance"],
-    contractValue: "$2,400/month",
-    lastService: "2024-01-15",
-    nextService: "2024-01-22",
-  },
-  {
-    id: 2,
-    name: "Downtown Restaurant",
-    type: "Commercial",
-    contact: "Maria Garcia",
-    email: "maria@restaurant.com",
-    phone: "+1 (555) 234-5678",
-    address: "456 Main St, Downtown",
-    status: "Active",
-    services: ["Kitchen Deep Clean", "Dining Area"],
-    contractValue: "$1,800/month",
-    lastService: "2024-01-14",
-    nextService: "2024-01-21",
-  },
-  {
-    id: 3,
-    name: "Residential - Johnson Family",
-    type: "Residential",
-    contact: "Sarah Johnson",
-    email: "sarah.johnson@email.com",
-    phone: "+1 (555) 345-6789",
-    address: "789 Oak Street, Suburbs",
-    status: "Active",
-    services: ["Weekly House Cleaning"],
-    contractValue: "$480/month",
-    lastService: "2024-01-16",
-    nextService: "2024-01-23",
-  },
-  {
-    id: 4,
-    name: "Tech Startup Office",
-    type: "Commercial",
-    contact: "Mike Chen",
-    email: "mike@techstartup.com",
-    phone: "+1 (555) 456-7890",
-    address: "321 Innovation Drive",
-    status: "Pending",
-    services: ["Office Cleaning", "Carpet Cleaning"],
-    contractValue: "$1,200/month",
-    lastService: null,
-    nextService: "2024-01-25",
-  },
-];
-
-const columns: Column[] = [
-  {
-    key: "name",
-    label: "Client Name",
-    sortable: true,
-    render: (value, row) => (
-      <div>
-        <div className="font-medium">{value}</div>
-        <div className="text-sm text-muted-foreground">{row.type}</div>
-      </div>
-    ),
-  },
-  {
-    key: "contact",
-    label: "Contact",
-    render: (value, row) => (
-      <div>
-        <div className="font-medium text-sm">{value}</div>
-        <div className="text-xs text-muted-foreground">{row.email}</div>
-      </div>
-    ),
-  },
-  {
-    key: "status",
-    label: "Status",
-    render: (value) => (
-      <Badge
-        variant={value === "Active" ? "default" : value === "Pending" ? "secondary" : "destructive"}
-      >
-        {value}
-      </Badge>
-    ),
-  },
-  {
-    key: "contractValue",
-    label: "Contract Value",
-    sortable: true,
-  },
-  {
-    key: "nextService",
-    label: "Next Service",
-    sortable: true,
-    render: (value) => (
-      <div className="text-sm">
-        {value ? new Date(value).toLocaleDateString() : "Not scheduled"}
-      </div>
-    ),
-  },
-];
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataTable } from "@/components/common/DataTable";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { clientService, Client, ServiceRequest, ClientNote, ClientSummary } from "@/services/clientService";
+import { ClientForm } from "@/components/clients/ClientForm";
+import { ServiceRequestForm } from "@/components/clients/ServiceRequestForm";
+import { ClientNotesForm } from "@/components/clients/ClientNotesForm";
+import { ClientDetailsModal } from "@/components/clients/ClientDetailsModal";
 
 export default function ClientManagement() {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("clients");
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [isClientFormOpen, setIsClientFormOpen] = useState(false);
+  const [isServiceRequestFormOpen, setIsServiceRequestFormOpen] = useState(false);
+  const [isClientNotesFormOpen, setIsClientNotesFormOpen] = useState(false);
+  const [isClientDetailsOpen, setIsClientDetailsOpen] = useState(false);
 
-  const handleView = (client: any) => {
-    console.log("View client:", client);
+  // Fetch data from backend
+  const { data: clientSummaryResponse, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
+    queryKey: ['clientSummary'],
+    queryFn: () => clientService.getClientSummary()
+  });
+
+  const { data: clientsResponse, isLoading: clientsLoading, refetch: refetchClients } = useQuery({
+    queryKey: ['clients', searchTerm],
+    queryFn: () => clientService.getClients({ search: searchTerm, page_size: 100 })
+  });
+
+  const { data: serviceRequestsResponse, isLoading: requestsLoading, refetch: refetchRequests } = useQuery({
+    queryKey: ['serviceRequests'],
+    queryFn: () => clientService.getServiceRequests({ page_size: 50 })
+  });
+
+  const clientSummary = clientSummaryResponse?.data;
+  const clients = clientsResponse?.data;
+  const serviceRequests = serviceRequestsResponse?.data;
+
+  const isLoading = summaryLoading || clientsLoading || requestsLoading;
+
+  // Client columns
+  const clientColumns = [
+    {
+      key: "name",
+      header: "Client Name",
+      render: (row: Client) => (
+        <div>
+          <div className="font-medium">{row.name}</div>
+          <div className="text-sm text-muted-foreground">{row.client_type}</div>
+        </div>
+      ),
+    },
+    {
+      key: "contact",
+      header: "Contact",
+      render: (row: Client) => (
+        <div>
+          <div className="font-medium text-sm">{row.contact_person}</div>
+          <div className="text-xs text-muted-foreground">{row.email}</div>
+          <div className="text-xs text-muted-foreground">{row.phone}</div>
+        </div>
+      ),
+    },
+    {
+      key: "location",
+      header: "Location",
+      render: (row: Client) => (
+        <div className="text-sm">
+          <div>{row.city}, {row.state}</div>
+          <div className="text-muted-foreground">{row.zip_code}</div>
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (row: Client) => (
+        <Badge variant={
+          row.status === 'active' ? 'default' :
+          row.status === 'prospect' ? 'secondary' :
+          row.status === 'suspended' ? 'destructive' : 'outline'
+        }>
+          {row.status}
+        </Badge>
+      ),
+    },
+    {
+      key: "service_frequency",
+      header: "Frequency",
+      render: (row: Client) => (
+        <Badge variant="outline">
+          {row.service_frequency}
+        </Badge>
+      ),
+    },
+    {
+      key: "total_revenue",
+      header: "Revenue",
+      render: (row: Client) => `$${row.total_revenue.toLocaleString()}`,
+    },
+    {
+      key: "next_service_date",
+      header: "Next Service",
+      render: (row: Client) => (
+        <div className="text-sm">
+          {row.next_service_date ? new Date(row.next_service_date).toLocaleDateString() : "Not scheduled"}
+        </div>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (row: Client) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedClient(row);
+              setIsClientDetailsOpen(true);
+            }}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedClient(row);
+              setIsClientFormOpen(true);
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedClient(row);
+              setIsServiceRequestFormOpen(true);
+            }}
+          >
+            <Calendar className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedClient(row);
+              setIsClientNotesFormOpen(true);
+            }}
+          >
+            <MessageSquare className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  // Service request columns
+  const serviceRequestColumns = [
+    {
+      key: "client_name",
+      header: "Client",
+    },
+    {
+      key: "service_type",
+      header: "Service Type",
+    },
+    {
+      key: "scheduled_date",
+      header: "Scheduled Date",
+      render: (row: ServiceRequest) => new Date(row.scheduled_date).toLocaleDateString(),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (row: ServiceRequest) => (
+        <Badge variant={
+          row.status === 'completed' ? 'default' :
+          row.status === 'scheduled' ? 'secondary' :
+          row.status === 'in_progress' ? 'outline' :
+          row.status === 'cancelled' ? 'destructive' : 'secondary'
+        }>
+          {row.status}
+        </Badge>
+      ),
+    },
+    {
+      key: "priority",
+      header: "Priority",
+      render: (row: ServiceRequest) => (
+        <Badge variant={
+          row.priority === 'urgent' ? 'destructive' :
+          row.priority === 'high' ? 'secondary' :
+          row.priority === 'medium' ? 'outline' : 'secondary'
+        }>
+          {row.priority}
+        </Badge>
+      ),
+    },
+    {
+      key: "estimated_cost",
+      header: "Cost",
+      render: (row: ServiceRequest) => `$${row.estimated_cost.toFixed(2)}`,
+    },
+  ];
+
+  const handleFormSuccess = () => {
+    setIsClientFormOpen(false);
+    setIsServiceRequestFormOpen(false);
+    setIsClientNotesFormOpen(false);
+    setSelectedClient(null);
+    refetchClients();
+    refetchRequests();
+    refetchSummary();
   };
 
-  const handleEdit = (client: any) => {
-    console.log("Edit client:", client);
-  };
-
-  const handleDelete = (client: any) => {
-    console.log("Delete client:", client);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading client data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -158,152 +245,171 @@ export default function ClientManagement() {
             Manage your cleaning service clients and contracts
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="btn-enterprise">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Client
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New Client</DialogTitle>
-                <DialogDescription>
-                  Create a new client record for your cleaning service.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="clientName">Client Name</Label>
-                    <Input id="clientName" placeholder="Enter client name" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="clientType">Client Type</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="residential">Residential</SelectItem>
-                        <SelectItem value="commercial">Commercial</SelectItem>
-                        <SelectItem value="industrial">Industrial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contactName">Contact Person</Label>
-                    <Input id="contactName" placeholder="Primary contact name" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" placeholder="+1 (555) 123-4567" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="client@email.com" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Textarea id="address" placeholder="Full service address" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contractValue">Contract Value</Label>
-                    <Input id="contractValue" placeholder="$1,200/month" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate">Start Date</Label>
-                    <Input id="startDate" type="date" />
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => setIsAddDialogOpen(false)}>
-                  Create Client
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button variant="outline" size="sm">
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
+          {activeTab === "clients" && (
+            <Button size="sm" onClick={() => setIsClientFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Client
+            </Button>
+          )}
+          {activeTab === "requests" && (
+            <Button size="sm" onClick={() => setIsServiceRequestFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Request
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <MapPin className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Clients</p>
-              <p className="text-2xl font-bold">247</p>
-            </div>
-          </div>
+      {/* Quick Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{clientSummary?.total_clients || 0}</div>
+            <p className="text-xs text-muted-foreground">+{clientSummary?.new_clients_this_month || 0} this month</p>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-success/10 rounded-lg">
-              <Phone className="h-5 w-5 text-success" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Active Contracts</p>
-              <p className="text-2xl font-bold">198</p>
-            </div>
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
+            <Phone className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{clientSummary?.active_clients || 0}</div>
+            <p className="text-xs text-muted-foreground">Currently active</p>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-warning/10 rounded-lg">
-              <Mail className="h-5 w-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Pending</p>
-              <p className="text-2xl font-bold">12</p>
-            </div>
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${clientSummary?.total_revenue?.toLocaleString() || 0}</div>
+            <p className="text-xs text-muted-foreground">All time revenue</p>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent/10 rounded-lg">
-              <MapPin className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">This Month</p>
-              <p className="text-2xl font-bold">37</p>
-            </div>
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Frequency</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{clientSummary?.average_service_frequency || "N/A"}</div>
+            <p className="text-xs text-muted-foreground">Service frequency</p>
+          </CardContent>
         </Card>
       </div>
 
-      {/* Client Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Clients</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            data={clientData}
-            columns={columns}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            searchable
-            filterable
-          />
-        </CardContent>
-      </Card>
+      {/* Top Service Types */}
+      {clientSummary?.top_service_types && clientSummary.top_service_types.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Service Types</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {clientSummary.top_service_types.map((service, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                  <div>
+                    <p className="font-medium text-sm">{service.service_type}</p>
+                    <p className="text-xs text-muted-foreground">{service.count} services</p>
+                  </div>
+                  <Badge variant="outline">{service.count}</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="clients">Clients</TabsTrigger>
+          <TabsTrigger value="requests">Service Requests</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="clients" className="space-y-4">
+          {/* Filters */}
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search clients..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button variant="outline" size="sm">
+              <Filter className="mr-2 h-4 w-4" />
+              Filter
+            </Button>
+          </div>
+
+          {/* Clients Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>All Clients</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataTable data={clients || []} columns={clientColumns} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="requests" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Service Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataTable data={serviceRequests || []} columns={serviceRequestColumns} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Forms */}
+      <ClientForm
+        open={isClientFormOpen}
+        onOpenChange={setIsClientFormOpen}
+        client={selectedClient}
+        onSuccess={handleFormSuccess}
+      />
+
+      <ServiceRequestForm
+        open={isServiceRequestFormOpen}
+        onOpenChange={setIsServiceRequestFormOpen}
+        client={selectedClient}
+        onSuccess={handleFormSuccess}
+      />
+
+      <ClientNotesForm
+        open={isClientNotesFormOpen}
+        onOpenChange={setIsClientNotesFormOpen}
+        client={selectedClient}
+        onSuccess={handleFormSuccess}
+      />
+
+      <ClientDetailsModal
+        open={isClientDetailsOpen}
+        onOpenChange={setIsClientDetailsOpen}
+        client={selectedClient}
+      />
     </div>
   );
 }

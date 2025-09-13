@@ -8,16 +8,29 @@ from .views import (
     WalletViewSet, BlockchainTransactionViewSet, SmartContractViewSet,
     TokenViewSet, WalletBalanceViewSet, DeFiProtocolViewSet,
     TransactionView, TokenTransferView, Web3StatusView,
-    MessageSigningView, SignatureVerificationView, WalletConnectView
+    MessageSigningView, SignatureVerificationView, WalletConnectView,
+    DecentralizedIdentityViewSet, OnChainAnchorViewSet, SmartContractModuleViewSet,
+    DAOGovernanceViewSet, TokenizedRewardViewSet, DecentralizedStorageViewSet,
+    BlockchainAuditLogViewSet, Web3DashboardView
 )
 
 router = DefaultRouter()
+# Basic Web3 endpoints
 router.register(r'wallets', WalletViewSet)
 router.register(r'transactions', BlockchainTransactionViewSet)
 router.register(r'contracts', SmartContractViewSet)
 router.register(r'tokens', TokenViewSet)
 router.register(r'balances', WalletBalanceViewSet)
 router.register(r'protocols', DeFiProtocolViewSet)
+
+# Core Web3 endpoints
+router.register(r'dids', DecentralizedIdentityViewSet)
+router.register(r'anchors', OnChainAnchorViewSet)
+router.register(r'smart-contract-modules', SmartContractModuleViewSet)
+router.register(r'governance', DAOGovernanceViewSet)
+router.register(r'rewards', TokenizedRewardViewSet)
+router.register(r'storage', DecentralizedStorageViewSet)
+router.register(r'audit-logs', BlockchainAuditLogViewSet)
 
 urlpatterns = [
     # API routes
@@ -34,4 +47,7 @@ urlpatterns = [
     # Status and connection endpoints
     path('api/status/', Web3StatusView.as_view(), name='web3-status'),
     path('api/walletconnect/', WalletConnectView.as_view(), name='web3-walletconnect'),
+    
+    # Web3 Dashboard
+    path('api/dashboard/', Web3DashboardView.as_view(), name='web3-dashboard'),
 ]

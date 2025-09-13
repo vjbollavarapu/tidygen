@@ -8,7 +8,7 @@ import sys
 import django
 
 # Setup Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ineat_erp.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
 from django.core.management import call_command

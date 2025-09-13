@@ -13,6 +13,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { useMemo } from "react";
 
 interface ChartData {
   name: string;
@@ -46,6 +47,18 @@ export function DashboardChart({
   dataKey = "value",
   color = "hsl(var(--primary))",
 }: DashboardChartProps) {
+  // Calculate responsive height based on chart type
+  const chartHeight = useMemo(() => {
+    switch (type) {
+      case "pie":
+        return 240; // Smaller for pie charts to accommodate labels
+      case "line":
+      case "bar":
+      default:
+        return 280; // Standard height for line and bar charts
+    }
+  }, [type]);
+
   const renderChart = () => {
     switch (type) {
       case "line":
@@ -111,7 +124,7 @@ export function DashboardChart({
               cx="50%"
               cy="50%"
               labelLine={false}
-              outerRadius={80}
+              outerRadius={50}
               fill="#8884d8"
               dataKey={dataKey}
               label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -140,8 +153,8 @@ export function DashboardChart({
       <CardHeader>
         <CardTitle className="text-lg font-semibold">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
+      <CardContent className="overflow-hidden p-4 flex-1">
+        <ResponsiveContainer width="100%" height={chartHeight}>
           {renderChart()}
         </ResponsiveContainer>
       </CardContent>

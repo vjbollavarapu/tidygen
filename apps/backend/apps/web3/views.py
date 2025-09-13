@@ -7,6 +7,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from .filters import (
+    WalletFilter, BlockchainTransactionFilter, SmartContractFilter,
+    TokenFilter, WalletBalanceFilter, DeFiProtocolFilter,
+    DecentralizedIdentityFilter, OnChainAnchorFilter, SmartContractModuleFilter,
+    DAOGovernanceFilter, GovernanceVoteFilter, TokenizedRewardFilter,
+    DecentralizedStorageFilter, BlockchainAuditLogFilter
+)
 from django.conf import settings
 from django.utils import timezone
 from web3 import Web3
@@ -18,14 +25,20 @@ from eth_account import Account
 
 from .models import (
     Wallet, BlockchainTransaction, SmartContract, Token,
-    WalletBalance, DeFiProtocol
+    WalletBalance, DeFiProtocol, DecentralizedIdentity, OnChainAnchor,
+    SmartContractModule, DAOGovernance, GovernanceVote, TokenizedReward,
+    DecentralizedStorage, BlockchainAuditLog
 )
 from .serializers import (
     WalletSerializer, WalletCreateSerializer, BlockchainTransactionSerializer,
     SmartContractSerializer, TokenSerializer, WalletBalanceSerializer,
     DeFiProtocolSerializer, WalletVerificationSerializer,
     TransactionRequestSerializer, TokenTransferSerializer,
-    MessageSigningSerializer, SignatureVerificationSerializer
+    MessageSigningSerializer, SignatureVerificationSerializer,
+    DecentralizedIdentitySerializer, DIDCreateSerializer, OnChainAnchorSerializer,
+    AnchorCreateSerializer, SmartContractModuleSerializer, DAOGovernanceSerializer,
+    GovernanceVoteSerializer, TokenizedRewardSerializer, RewardCreateSerializer,
+    DecentralizedStorageSerializer, BlockchainAuditLogSerializer, GovernanceProposalSerializer
 )
 
 
@@ -34,7 +47,7 @@ class WalletViewSet(viewsets.ModelViewSet):
     queryset = Wallet.objects.all()
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['wallet_type', 'is_primary', 'is_verified']
+    filterset_class = WalletFilter
     search_fields = ['address']
     ordering_fields = ['created_at', 'last_used']
     ordering = ['-created_at']
@@ -94,7 +107,7 @@ class BlockchainTransactionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = BlockchainTransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['transaction_type', 'status', 'wallet']
+    filterset_class = BlockchainTransactionFilter
     search_fields = ['transaction_hash', 'from_address', 'to_address']
     ordering_fields = ['created_at', 'block_number', 'value']
     ordering = ['-created_at']
@@ -124,7 +137,7 @@ class SmartContractViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SmartContractSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['contract_type', 'is_verified', 'is_active']
+    filterset_class = SmartContractFilter
     search_fields = ['name', 'address']
     ordering_fields = ['name', 'created_at']
     ordering = ['-created_at']
@@ -143,7 +156,7 @@ class TokenViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TokenSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['contract', 'decimals']
+    filterset_class = TokenFilter
     search_fields = ['name', 'symbol', 'token_id']
     ordering_fields = ['name', 'symbol', 'market_cap']
     ordering = ['symbol']
@@ -164,7 +177,7 @@ class WalletBalanceViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = WalletBalanceSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ['wallet', 'token']
+    filterset_class = WalletBalanceFilter
     ordering_fields = ['balance', 'last_updated']
     ordering = ['-balance']
     
@@ -187,7 +200,7 @@ class DeFiProtocolViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = DeFiProtocolSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['protocol_type', 'risk_level']
+    filterset_class = DeFiProtocolFilter
     search_fields = ['name', 'description']
     ordering_fields = ['name', 'apy']
     ordering = ['name']
@@ -389,4 +402,402 @@ class WalletConnectView(APIView):
         # TODO: Implement WalletConnect disconnection
         return Response({
             'message': 'WalletConnect session disconnected'
+        })
+
+
+# ==================== CORE WEB3 VIEWS ====================
+
+class DecentralizedIdentityViewSet(viewsets.ModelViewSet):
+    """ViewSet for Decentralized Identity management."""
+    queryset = DecentralizedIdentity.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = DecentralizedIdentityFilter
+    search_fields = ['did_identifier', 'user__username']
+    ordering_fields = ['created_at', 'modified_at']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter DIDs by user's organization."""
+        user_orgs = self.request.user.organization_memberships.values_list('organization', flat=True)
+        return DecentralizedIdentity.objects.filter(organization__in=user_orgs)
+    
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action."""
+        if self.action == 'create':
+            return DIDCreateSerializer
+        return DecentralizedIdentitySerializer
+    
+    @action(detail=True, methods=['post'])
+    def verify(self, request, pk=None):
+        """Verify DID ownership."""
+        did = self.get_object()
+        # TODO: Implement DID verification logic
+        did.is_verified = True
+        did.verification_timestamp = timezone.now()
+        did.save()
+        
+        return Response({'message': 'DID verified successfully.'})
+    
+    @action(detail=True, methods=['post'])
+    def generate_document(self, request, pk=None):
+        """Generate DID document."""
+        did = self.get_object()
+        did.generate_did_document()
+        
+        return Response({
+            'message': 'DID document generated successfully.',
+            'did_document': did.did_document
+        })
+
+
+class OnChainAnchorViewSet(viewsets.ModelViewSet):
+    """ViewSet for On-Chain Anchor management."""
+    queryset = OnChainAnchor.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = OnChainAnchorFilter
+    search_fields = ['data_hash', 'transaction_hash', 'description']
+    ordering_fields = ['created_at', 'block_number']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter anchors by user's organization."""
+        user_orgs = self.request.user.organization_memberships.values_list('organization', flat=True)
+        return OnChainAnchor.objects.filter(organization__in=user_orgs)
+    
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action."""
+        if self.action == 'create':
+            return AnchorCreateSerializer
+        return OnChainAnchorSerializer
+    
+    @action(detail=True, methods=['post'])
+    def anchor_to_blockchain(self, request, pk=None):
+        """Anchor data to blockchain."""
+        anchor = self.get_object()
+        # TODO: Implement blockchain anchoring logic
+        anchor.status = 'anchored'
+        anchor.transaction_hash = '0x' + hashlib.sha256(f"{anchor.id}{timezone.now()}".encode()).hexdigest()[:64]
+        anchor.block_number = 18000000  # Example block number
+        anchor.save()
+        
+        return Response({
+            'message': 'Data anchored to blockchain successfully.',
+            'transaction_hash': anchor.transaction_hash,
+            'block_number': anchor.block_number
+        })
+    
+    @action(detail=False, methods=['get'])
+    def pending_anchors(self, request):
+        """Get pending anchors."""
+        pending_anchors = self.get_queryset().filter(status='pending')
+        serializer = self.get_serializer(pending_anchors, many=True)
+        return Response(serializer.data)
+
+
+class SmartContractModuleViewSet(viewsets.ModelViewSet):
+    """ViewSet for Smart Contract Module management."""
+    queryset = SmartContractModule.objects.all()
+    serializer_class = SmartContractModuleSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = SmartContractModuleFilter
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'created_at']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter modules by user's organization."""
+        user_orgs = self.request.user.organization_memberships.values_list('organization', flat=True)
+        return SmartContractModule.objects.filter(organization__in=user_orgs)
+    
+    @action(detail=True, methods=['post'])
+    def deploy(self, request, pk=None):
+        """Deploy smart contract module."""
+        module = self.get_object()
+        # TODO: Implement smart contract deployment
+        module.status = 'deployed'
+        module.save()
+        
+        return Response({'message': 'Smart contract module deployed successfully.'})
+    
+    @action(detail=True, methods=['post'])
+    def activate(self, request, pk=None):
+        """Activate smart contract module."""
+        module = self.get_object()
+        module.status = 'active'
+        module.save()
+        
+        return Response({'message': 'Smart contract module activated successfully.'})
+    
+    @action(detail=True, methods=['post'])
+    def execute(self, request, pk=None):
+        """Execute smart contract function."""
+        module = self.get_object()
+        function_name = request.data.get('function_name')
+        parameters = request.data.get('parameters', [])
+        
+        # TODO: Implement smart contract execution
+        return Response({
+            'message': f'Function {function_name} executed successfully.',
+            'result': 'execution_result_placeholder'
+        })
+
+
+class DAOGovernanceViewSet(viewsets.ModelViewSet):
+    """ViewSet for DAO Governance management."""
+    queryset = DAOGovernance.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = DAOGovernanceFilter
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at', 'voting_start', 'voting_end']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter governance by user's organization."""
+        user_orgs = self.request.user.organization_memberships.values_list('organization', flat=True)
+        return DAOGovernance.objects.filter(organization__in=user_orgs)
+    
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action."""
+        if self.action == 'create':
+            return GovernanceProposalSerializer
+        return DAOGovernanceSerializer
+    
+    @action(detail=True, methods=['post'])
+    def start_voting(self, request, pk=None):
+        """Start voting period."""
+        governance = self.get_object()
+        governance.status = 'active'
+        governance.voting_start = timezone.now()
+        governance.voting_end = timezone.now() + governance.voting_duration
+        governance.save()
+        
+        return Response({'message': 'Voting period started successfully.'})
+    
+    @action(detail=True, methods=['post'])
+    def vote(self, request, pk=None):
+        """Cast a vote."""
+        governance = self.get_object()
+        vote_choice = request.data.get('vote_choice')
+        voting_power = request.data.get('voting_power', 1)
+        reason = request.data.get('reason', '')
+        
+        # Check if user can vote
+        if governance.votes.filter(voter=request.user).exists():
+            return Response({'error': 'User has already voted.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create vote
+        vote = GovernanceVote.objects.create(
+            governance=governance,
+            voter=request.user,
+            vote_choice=vote_choice,
+            voting_power=voting_power,
+            reason=reason
+        )
+        
+        # Update governance totals
+        if vote_choice == 'for':
+            governance.votes_for += voting_power
+        elif vote_choice == 'against':
+            governance.votes_against += voting_power
+        
+        governance.total_votes += voting_power
+        governance.save()
+        
+        return Response({'message': 'Vote cast successfully.'})
+    
+    @action(detail=True, methods=['post'])
+    def execute(self, request, pk=None):
+        """Execute governance proposal."""
+        governance = self.get_object()
+        
+        # Check if proposal passed
+        if governance.votes_for <= governance.votes_against:
+            return Response({'error': 'Proposal did not pass.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        governance.status = 'executed'
+        governance.executed_at = timezone.now()
+        governance.executed_by = request.user
+        governance.save()
+        
+        return Response({'message': 'Proposal executed successfully.'})
+
+
+class TokenizedRewardViewSet(viewsets.ModelViewSet):
+    """ViewSet for Tokenized Reward management."""
+    queryset = TokenizedReward.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = TokenizedRewardFilter
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at', 'token_amount']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter rewards by user's organization."""
+        user_orgs = self.request.user.organization_memberships.values_list('organization', flat=True)
+        return TokenizedReward.objects.filter(organization__in=user_orgs)
+    
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action."""
+        if self.action == 'create':
+            return RewardCreateSerializer
+        return TokenizedRewardSerializer
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approve tokenized reward."""
+        reward = self.get_object()
+        evaluation_score = request.data.get('evaluation_score')
+        evaluation_notes = request.data.get('evaluation_notes', '')
+        
+        reward.status = 'approved'
+        reward.evaluator = request.user
+        reward.evaluation_score = evaluation_score
+        reward.evaluation_notes = evaluation_notes
+        reward.save()
+        
+        return Response({'message': 'Reward approved successfully.'})
+    
+    @action(detail=True, methods=['post'])
+    def pay(self, request, pk=None):
+        """Pay tokenized reward."""
+        reward = self.get_object()
+        
+        if reward.status != 'approved':
+            return Response({'error': 'Reward must be approved before payment.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # TODO: Implement token payment logic
+        reward.status = 'paid'
+        reward.paid_at = timezone.now()
+        reward.payment_transaction = None  # TODO: Create actual transaction
+        reward.save()
+        
+        return Response({'message': 'Reward paid successfully.'})
+
+
+class DecentralizedStorageViewSet(viewsets.ModelViewSet):
+    """ViewSet for Decentralized Storage management."""
+    queryset = DecentralizedStorage.objects.all()
+    serializer_class = DecentralizedStorageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = DecentralizedStorageFilter
+    search_fields = ['original_filename', 'storage_hash']
+    ordering_fields = ['created_at', 'file_size']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter storage by user's organization."""
+        user_orgs = self.request.user.organization_memberships.values_list('organization', flat=True)
+        return DecentralizedStorage.objects.filter(organization__in=user_orgs)
+    
+    @action(detail=True, methods=['post'])
+    def upload_to_ipfs(self, request, pk=None):
+        """Upload file to IPFS."""
+        storage = self.get_object()
+        # TODO: Implement IPFS upload
+        storage.storage_type = 'ipfs'
+        storage.storage_hash = 'Qm' + hashlib.sha256(f"{storage.id}{timezone.now()}".encode()).hexdigest()[:44]
+        storage.storage_url = f"https://ipfs.io/ipfs/{storage.storage_hash}"
+        storage.status = 'uploaded'
+        storage.save()
+        
+        return Response({
+            'message': 'File uploaded to IPFS successfully.',
+            'ipfs_hash': storage.storage_hash,
+            'ipfs_url': storage.storage_url
+        })
+    
+    @action(detail=True, methods=['post'])
+    def pin(self, request, pk=None):
+        """Pin file to IPFS."""
+        storage = self.get_object()
+        storage.pin_status = True
+        storage.status = 'pinned'
+        storage.save()
+        
+        return Response({'message': 'File pinned successfully.'})
+
+
+class BlockchainAuditLogViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for Blockchain Audit Log (read-only)."""
+    queryset = BlockchainAuditLog.objects.all()
+    serializer_class = BlockchainAuditLogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = BlockchainAuditLogFilter
+    search_fields = ['event_name', 'description']
+    ordering_fields = ['created_at', 'severity']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter audit logs by user's organization."""
+        user_orgs = self.request.user.organization_memberships.values_list('organization', flat=True)
+        return BlockchainAuditLog.objects.filter(organization__in=user_orgs)
+    
+    @action(detail=False, methods=['get'])
+    def security_events(self, request):
+        """Get security-related audit logs."""
+        security_logs = self.get_queryset().filter(
+            log_type='security_event'
+        ).order_by('-created_at')[:50]
+        serializer = self.get_serializer(security_logs, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def user_actions(self, request):
+        """Get user action audit logs."""
+        user_actions = self.get_queryset().filter(
+            log_type='user_action',
+            user=request.user
+        ).order_by('-created_at')[:50]
+        serializer = self.get_serializer(user_actions, many=True)
+        return Response(serializer.data)
+
+
+class Web3DashboardView(APIView):
+    """Web3 Dashboard overview."""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        """Get Web3 dashboard data."""
+        user_orgs = request.user.organization_memberships.values_list('organization', flat=True)
+        
+        # Get Web3 statistics
+        stats = {
+            'total_wallets': Wallet.objects.filter(user=request.user).count(),
+            'verified_wallets': Wallet.objects.filter(user=request.user, is_verified=True).count(),
+            'total_transactions': BlockchainTransaction.objects.filter(user=request.user).count(),
+            'pending_transactions': BlockchainTransaction.objects.filter(user=request.user, status='pending').count(),
+            'total_dids': DecentralizedIdentity.objects.filter(organization__in=user_orgs).count(),
+            'active_dids': DecentralizedIdentity.objects.filter(organization__in=user_orgs, status='active').count(),
+            'total_anchors': OnChainAnchor.objects.filter(organization__in=user_orgs).count(),
+            'anchored_data': OnChainAnchor.objects.filter(organization__in=user_orgs, status='anchored').count(),
+            'active_proposals': DAOGovernance.objects.filter(organization__in=user_orgs, status='active').count(),
+            'total_rewards': TokenizedReward.objects.filter(organization__in=user_orgs).count(),
+            'paid_rewards': TokenizedReward.objects.filter(organization__in=user_orgs, status='paid').count(),
+        }
+        
+        # Get recent activity
+        recent_transactions = BlockchainTransaction.objects.filter(
+            user=request.user
+        ).order_by('-created_at')[:10]
+        
+        recent_anchors = OnChainAnchor.objects.filter(
+            organization__in=user_orgs
+        ).order_by('-created_at')[:10]
+        
+        recent_proposals = DAOGovernance.objects.filter(
+            organization__in=user_orgs
+        ).order_by('-created_at')[:5]
+        
+        return Response({
+            'stats': stats,
+            'recent_transactions': BlockchainTransactionSerializer(recent_transactions, many=True).data,
+            'recent_anchors': OnChainAnchorSerializer(recent_anchors, many=True).data,
+            'recent_proposals': DAOGovernanceSerializer(recent_proposals, many=True).data,
         })

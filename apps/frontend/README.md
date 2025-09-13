@@ -1,73 +1,369 @@
-# Welcome to your Lovable project
+# iNEAT-ERP: Intelligent Enterprise Resource Planning
 
-## Project info
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Web3](https://img.shields.io/badge/Web3-F16822?logo=web3.js&logoColor=white)](https://web3.foundation/)
 
-**URL**: https://lovable.dev/projects/ea7c6844-24c5-4891-b2a3-4330575627a8
+A comprehensive, multi-tenant ERP solution with Web3 integration, designed for modern enterprises and optimized for Web3 Foundation grants.
 
-## How can I edit this code?
+## 🚀 Overview
 
-There are several ways of editing your application.
+iNEAT-ERP is a full-stack enterprise resource planning system that combines traditional business management with cutting-edge Web3 technologies. It offers both Community and Commercial editions to serve different market needs.
 
-**Use Lovable**
+### Key Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ea7c6844-24c5-4891-b2a3-4330575627a8) and start prompting.
+- **Multi-Tenant Architecture**: Complete data isolation and tenant management
+- **Web3 Integration**: Decentralized identity, on-chain audit logs, and IPFS storage
+- **Partner/Reseller Portal**: Comprehensive partner management with commission tracking
+- **White-Label Theming**: Custom branding and theming for resellers
+- **Role-Based Access Control**: Granular permissions and security
+- **Real-Time Analytics**: Advanced reporting and business intelligence
+- **API-First Design**: RESTful APIs with comprehensive documentation
 
-Changes made via Lovable will be committed automatically to this repo.
+## 📋 Editions
 
-**Use your preferred IDE**
+### Community Edition (Free)
+- **Target**: Open-source community, Web3 Foundation grant applicants
+- **Features**: 
+  - Core ERP functionality
+  - Web3 integration (DID, Substrate, IPFS)
+  - Self-hosting capability
+  - Community support
+- **License**: MIT
+- **Deployment**: Docker, self-hosted
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Commercial Edition (SaaS)
+- **Target**: Enterprise customers, partners, resellers
+- **Features**:
+  - All Community features
+  - Multi-tenant SaaS platform
+  - Partner/reseller portal
+  - White-label theming
+  - Priority support
+  - Advanced analytics
+- **License**: Commercial
+- **Deployment**: Cloud-hosted, managed service
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🛠️ Technology Stack
 
-Follow these steps:
+### Frontend
+- **React 18** with TypeScript
+- **Tailwind CSS** for styling
+- **Shadcn/ui** component library
+- **React Query** for state management
+- **React Router** for navigation
+- **Recharts** for data visualization
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Backend
+- **Django** with Django REST Framework
+- **PostgreSQL** database
+- **Redis** for caching
+- **Celery** for background tasks
+- **JWT** authentication
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Web3 Integration
+- **Polkadot.js** for blockchain interaction
+- **Substrate** for on-chain audit logs
+- **IPFS** for decentralized file storage
+- **MetaMask** and wallet integration
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Infrastructure
+- **Docker** containerization
+- **Nginx** reverse proxy
+- **Let's Encrypt** SSL certificates
+- **GitHub Actions** CI/CD
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+ and npm/yarn
+- Python 3.9+ and pip
+- Docker and Docker Compose
+- Git
+
+### Community Edition Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-org/ineat-erp.git
+   cd ineat-erp
+   ```
+
+2. **Run the installer**
+   ```bash
+   chmod +x install.sh
+   ./install.sh
+   ```
+
+3. **Access the application**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - Admin Panel: http://localhost:8000/admin
+
+### Commercial Edition Setup
+
+1. **Environment Configuration**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+2. **Docker Compose**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Initialize Database**
+   ```bash
+   docker-compose exec backend python manage.py migrate
+   docker-compose exec backend python manage.py createsuperuser
+   ```
+
+## 📁 Project Structure
+
+```
+ineat-erp/
+├── apps/
+│   ├── frontend/                 # React frontend
+│   │   ├── src/
+│   │   │   ├── components/       # Reusable components
+│   │   │   ├── pages/           # Page components
+│   │   │   ├── contexts/        # React contexts
+│   │   │   ├── hooks/           # Custom hooks
+│   │   │   ├── services/        # API services
+│   │   │   └── utils/           # Utility functions
+│   │   ├── public/              # Static assets
+│   │   └── package.json
+│   └── backend/                 # Django backend
+│       ├── ineat_erp/          # Main Django project
+│       ├── apps/               # Django applications
+│       │   ├── core/           # Core functionality
+│       │   ├── accounts/       # User management
+│       │   ├── inventory/      # Inventory management
+│       │   ├── hr/             # Human resources
+│       │   ├── finance/        # Financial management
+│       │   └── partners/       # Partner management
+│       └── requirements.txt
+├── docs/                       # Documentation
+├── docker-compose.yml          # Docker configuration
+├── Dockerfile                  # Docker image
+├── install.sh                  # Installation script
+└── README.md
+```
+
+## 🔧 Development
+
+### Frontend Development
+
+1. **Install dependencies**
+   ```bash
+   cd apps/frontend
+   npm install
+   ```
+
+2. **Start development server**
+   ```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+3. **Build for production**
+   ```bash
+   npm run build
+   ```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Backend Development
 
-**Use GitHub Codespaces**
+1. **Create virtual environment**
+   ```bash
+   cd apps/backend
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## What technologies are used for this project?
+3. **Run migrations**
+   ```bash
+   python manage.py migrate
+   ```
 
-This project is built with:
+4. **Start development server**
+   ```bash
+   python manage.py runserver
+   ```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Web3 Development
 
-## How can I deploy this project?
+1. **Configure Web3 providers**
+   ```bash
+   # Set up Polkadot.js
+   npm install @polkadot/api @polkadot/util
+   
+   # Configure IPFS
+   npm install ipfs-http-client
+   ```
 
-Simply open [Lovable](https://lovable.dev/projects/ea7c6844-24c5-4891-b2a3-4330575627a8) and click on Share -> Publish.
+2. **Test Web3 features**
+   ```bash
+   npm run test:web3
+   ```
 
-## Can I connect a custom domain to my Lovable project?
+## 🧪 Testing
 
-Yes, you can!
+### Frontend Tests
+```bash
+cd apps/frontend
+npm run test
+npm run test:coverage
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Backend Tests
+```bash
+cd apps/backend
+python manage.py test
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Integration Tests
+```bash
+npm run test:integration
+```
+
+## 📚 API Documentation
+
+### Swagger UI
+Access the interactive API documentation at:
+- Development: http://localhost:8000/docs/
+- Production: https://your-domain.com/docs/
+
+### API Endpoints
+
+#### Authentication
+- `POST /api/auth/login/` - User login
+- `POST /api/auth/logout/` - User logout
+- `POST /api/auth/refresh/` - Refresh JWT token
+
+#### Multi-Tenant
+- `GET /api/tenants/` - List tenants
+- `POST /api/tenants/` - Create tenant
+- `PATCH /api/tenants/{id}/` - Update tenant
+
+#### Partner Management
+- `GET /api/partners/` - List partners
+- `POST /api/partners/` - Create partner
+- `GET /api/partners/{id}/customers/` - Partner customers
+- `GET /api/partners/{id}/commissions/` - Commission reports
+
+#### Web3 Integration
+- `POST /api/web3/did/authenticate/` - DID authentication
+- `POST /api/web3/audit-logs/` - Store audit log on-chain
+- `POST /api/web3/ipfs/upload/` - Upload to IPFS
+
+## 🔐 Security
+
+### Authentication & Authorization
+- JWT-based authentication
+- Role-based access control (RBAC)
+- Multi-factor authentication support
+- API rate limiting
+
+### Data Protection
+- Multi-tenant data isolation
+- Encryption at rest and in transit
+- GDPR compliance features
+- Audit logging
+
+### Web3 Security
+- Cryptographic signature verification
+- Decentralized identity validation
+- On-chain audit trails
+- Secure key management
+
+## 🌐 Web3 Features
+
+### Decentralized Identity (DID)
+- Support for multiple wallet providers
+- Polkadot.js integration
+- MetaMask compatibility
+- Substrate Connect support
+
+### On-Chain Audit Logs
+- Immutable audit trail on Substrate
+- Transaction verification
+- Event tracking
+- Compliance reporting
+
+### Decentralized Storage
+- IPFS file storage
+- Content addressing
+- Distributed file system
+- Redundancy and availability
+
+## 🤝 Contributing
+
+We welcome contributions from the community! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Workflow
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+### Code Standards
+- TypeScript for frontend
+- Python PEP 8 for backend
+- ESLint and Prettier for code formatting
+- Comprehensive test coverage
+
+## 📄 License
+
+- **Community Edition**: MIT License
+- **Commercial Edition**: Commercial License
+
+See [LICENSE](LICENSE) for details.
+
+## 🆘 Support
+
+### Community Support
+- GitHub Issues: [Report bugs and request features](https://github.com/your-org/ineat-erp/issues)
+- Discord: [Join our community](https://discord.gg/your-discord)
+- Documentation: [Read the docs](https://docs.ineat-erp.com)
+
+### Commercial Support
+- Email: support@ineat-erp.com
+- Phone: +1 (555) 123-4567
+- Priority support for Enterprise customers
+
+## 🗺️ Roadmap
+
+See our [Roadmap](docs/roadmap.md) for upcoming features and Web3 Foundation grant alignment.
+
+### Upcoming Features
+- Advanced AI/ML integration
+- Mobile applications
+- Additional blockchain support
+- Enhanced analytics
+- Workflow automation
+
+## 🙏 Acknowledgments
+
+- Web3 Foundation for grant support
+- Polkadot ecosystem for blockchain infrastructure
+- React and Django communities
+- Open source contributors
+
+## 📞 Contact
+
+- **Website**: https://ineat-erp.com
+- **Email**: info@ineat-erp.com
+- **Twitter**: [@ineat_erp](https://twitter.com/ineat_erp)
+- **LinkedIn**: [iNEAT-ERP](https://linkedin.com/company/ineat-erp)
+
+---
+
+**Built with ❤️ for the Web3 community and enterprise users worldwide.**

@@ -3,7 +3,11 @@ Web3 and blockchain integration models.
 """
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from apps.core.models import BaseModel
+from apps.organizations.models import Organization
+import hashlib
+import json
 
 User = get_user_model()
 
@@ -234,3 +238,461 @@ class DeFiProtocol(BaseModel):
     
     def __str__(self):
         return f"{self.name} ({self.protocol_type})"
+
+
+# ==================== CORE WEB3 FEATURES ====================
+
+class DecentralizedIdentity(BaseModel):
+    """Decentralized Identity (DID) management."""
+    DID_METHODS = [
+        ('did:ethr', 'Ethereum DID'),
+        ('did:key', 'Key DID'),
+        ('did:web', 'Web DID'),
+        ('did:polkadot', 'Polkadot DID'),
+        ('did:substrate', 'Substrate DID'),
+        ('did:ens', 'ENS DID'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('revoked', 'Revoked'),
+        ('suspended', 'Suspended'),
+        ('expired', 'Expired'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='did')
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='dids')
+    did_identifier = models.CharField(max_length=255, unique=True)
+    did_method = models.CharField(max_length=20, choices=DID_METHODS)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    
+    # DID Document
+    did_document = models.JSONField(default=dict)
+    public_keys = models.JSONField(default=list)
+    service_endpoints = models.JSONField(default=list)
+    
+    # Verification
+    is_verified = models.BooleanField(default=False)
+    verification_method = models.CharField(max_length=100, blank=True)
+    verification_timestamp = models.DateTimeField(null=True, blank=True)
+    
+    # Metadata
+    metadata = models.JSONField(default=dict)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = 'Decentralized Identity'
+        verbose_name_plural = 'Decentralized Identities'
+        unique_together = ['user', 'organization']
+        indexes = [
+            models.Index(fields=['did_identifier']),
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['organization', 'status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.did_identifier} ({self.user.username})"
+    
+    def generate_did_document(self):
+        """Generate DID document."""
+        self.did_document = {
+            "@context": ["https://www.w3.org/ns/did/v1"],
+            "id": self.did_identifier,
+            "verificationMethod": self.public_keys,
+            "service": self.service_endpoints,
+            "created": self.created.isoformat(),
+            "updated": self.modified.isoformat(),
+        }
+        self.save()
+
+
+class OnChainAnchor(BaseModel):
+    """On-chain data anchoring for critical transactions."""
+    ANCHOR_TYPES = [
+        ('transaction', 'Transaction Hash'),
+        ('document', 'Document Hash'),
+        ('contract', 'Contract Hash'),
+        ('payment', 'Payment Hash'),
+        ('supply_chain', 'Supply Chain Checkpoint'),
+        ('audit_log', 'Audit Log Hash'),
+        ('invoice', 'Invoice Hash'),
+        ('purchase_order', 'Purchase Order Hash'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('anchored', 'Anchored'),
+        ('confirmed', 'Confirmed'),
+        ('failed', 'Failed'),
+    ]
+    
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='anchors')
+    anchor_type = models.CharField(max_length=20, choices=ANCHOR_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Data to be anchored
+    data_hash = models.CharField(max_length=64)  # SHA-256 hash
+    original_data = models.JSONField(default=dict)
+    data_type = models.CharField(max_length=50)  # e.g., 'invoice', 'contract', 'payment'
+    
+    # Blockchain details
+    blockchain_network = models.CharField(max_length=50, default='ethereum')
+    transaction_hash = models.CharField(max_length=66, blank=True)
+    block_number = models.BigIntegerField(null=True, blank=True)
+    block_hash = models.CharField(max_length=66, blank=True)
+    gas_used = models.BigIntegerField(null=True, blank=True)
+    
+    # Related entities
+    related_invoice = models.ForeignKey('finance.Invoice', on_delete=models.SET_NULL, null=True, blank=True)
+    related_contract = models.ForeignKey('SmartContract', on_delete=models.SET_NULL, null=True, blank=True)
+    related_payment = models.ForeignKey('finance.Payment', on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Metadata
+    description = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict)
+    
+    class Meta:
+        verbose_name = 'On-Chain Anchor'
+        verbose_name_plural = 'On-Chain Anchors'
+        ordering = ['-created']
+        indexes = [
+            models.Index(fields=['data_hash']),
+            models.Index(fields=['transaction_hash']),
+            models.Index(fields=['organization', 'anchor_type']),
+            models.Index(fields=['status', 'created']),
+        ]
+    
+    def __str__(self):
+        return f"{self.anchor_type} - {self.data_hash[:16]}..."
+    
+    def generate_data_hash(self, data):
+        """Generate SHA-256 hash of data."""
+        if isinstance(data, dict):
+            data_str = json.dumps(data, sort_keys=True)
+        else:
+            data_str = str(data)
+        return hashlib.sha256(data_str.encode()).hexdigest()
+
+
+class SmartContractModule(BaseModel):
+    """Smart contract-driven ERP modules."""
+    MODULE_TYPES = [
+        ('invoice_escrow', 'Invoice Escrow'),
+        ('payment_automation', 'Payment Automation'),
+        ('supply_chain', 'Supply Chain Tracking'),
+        ('compliance', 'Compliance Monitoring'),
+        ('governance', 'Governance Voting'),
+        ('rewards', 'Rewards Distribution'),
+        ('audit', 'Audit Logging'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('deployed', 'Deployed'),
+        ('active', 'Active'),
+        ('paused', 'Paused'),
+        ('deprecated', 'Deprecated'),
+    ]
+    
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='smart_contract_modules')
+    name = models.CharField(max_length=100)
+    module_type = models.CharField(max_length=30, choices=MODULE_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    
+    # Smart contract details
+    contract = models.ForeignKey(SmartContract, on_delete=models.CASCADE, related_name='modules')
+    contract_address = models.CharField(max_length=42)
+    abi = models.JSONField()
+    
+    # Configuration
+    configuration = models.JSONField(default=dict)
+    triggers = models.JSONField(default=list)  # Events that trigger contract execution
+    conditions = models.JSONField(default=dict)  # Conditions for execution
+    
+    # Integration
+    integrated_modules = models.JSONField(default=list)  # ERP modules this integrates with
+    webhook_endpoints = models.JSONField(default=list)
+    
+    # Metadata
+    description = models.TextField(blank=True)
+    version = models.CharField(max_length=20, default='1.0.0')
+    documentation = models.URLField(blank=True)
+    
+    class Meta:
+        verbose_name = 'Smart Contract Module'
+        verbose_name_plural = 'Smart Contract Modules'
+        ordering = ['-created']
+        unique_together = ['organization', 'name', 'version']
+    
+    def __str__(self):
+        return f"{self.name} ({self.module_type})"
+
+
+class DAOGovernance(BaseModel):
+    """DAO-style governance for community version."""
+    GOVERNANCE_TYPES = [
+        ('proposal', 'Proposal'),
+        ('vote', 'Vote'),
+        ('execution', 'Execution'),
+        ('treasury', 'Treasury Management'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('active', 'Active'),
+        ('passed', 'Passed'),
+        ('rejected', 'Rejected'),
+        ('executed', 'Executed'),
+        ('expired', 'Expired'),
+    ]
+    
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='dao_governance')
+    governance_type = models.CharField(max_length=20, choices=GOVERNANCE_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    
+    # Proposal details
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    proposer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='proposals')
+    
+    # Voting
+    voting_power_required = models.DecimalField(max_digits=20, decimal_places=8, default=0)
+    voting_duration = models.DurationField()
+    voting_start = models.DateTimeField(null=True, blank=True)
+    voting_end = models.DateTimeField(null=True, blank=True)
+    
+    # Results
+    votes_for = models.DecimalField(max_digits=20, decimal_places=8, default=0)
+    votes_against = models.DecimalField(max_digits=20, decimal_places=8, default=0)
+    total_votes = models.DecimalField(max_digits=20, decimal_places=8, default=0)
+    
+    # Execution
+    execution_data = models.JSONField(default=dict)
+    executed_at = models.DateTimeField(null=True, blank=True)
+    executed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='executed_proposals')
+    
+    # Blockchain integration
+    on_chain_proposal_id = models.CharField(max_length=100, blank=True)
+    transaction_hash = models.CharField(max_length=66, blank=True)
+    
+    class Meta:
+        verbose_name = 'DAO Governance'
+        verbose_name_plural = 'DAO Governance'
+        ordering = ['-created']
+        indexes = [
+            models.Index(fields=['organization', 'status']),
+            models.Index(fields=['proposer', 'status']),
+            models.Index(fields=['voting_start', 'voting_end']),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} ({self.governance_type})"
+
+
+class GovernanceVote(BaseModel):
+    """Individual votes in DAO governance."""
+    VOTE_CHOICES = [
+        ('for', 'For'),
+        ('against', 'Against'),
+        ('abstain', 'Abstain'),
+    ]
+    
+    governance = models.ForeignKey(DAOGovernance, on_delete=models.CASCADE, related_name='votes')
+    voter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='governance_votes')
+    vote_choice = models.CharField(max_length=10, choices=VOTE_CHOICES)
+    voting_power = models.DecimalField(max_digits=20, decimal_places=8)
+    
+    # Blockchain integration
+    transaction_hash = models.CharField(max_length=66, blank=True)
+    block_number = models.BigIntegerField(null=True, blank=True)
+    
+    # Metadata
+    reason = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict)
+    
+    class Meta:
+        verbose_name = 'Governance Vote'
+        verbose_name_plural = 'Governance Votes'
+        unique_together = ['governance', 'voter']
+        ordering = ['-created']
+    
+    def __str__(self):
+        return f"{self.voter.username} - {self.vote_choice} ({self.voting_power})"
+
+
+class TokenizedReward(BaseModel):
+    """Tokenized rewards for community contributions."""
+    REWARD_TYPES = [
+        ('bug_report', 'Bug Report'),
+        ('feature_request', 'Feature Request'),
+        ('code_contribution', 'Code Contribution'),
+        ('documentation', 'Documentation'),
+        ('testing', 'Testing'),
+        ('support', 'Support'),
+        ('translation', 'Translation'),
+        ('design', 'Design'),
+        ('marketing', 'Marketing'),
+        ('other', 'Other'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('paid', 'Paid'),
+    ]
+    
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='tokenized_rewards')
+    reward_type = models.CharField(max_length=20, choices=REWARD_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Recipient
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tokenized_rewards')
+    recipient_wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='rewards')
+    
+    # Reward details
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    token_amount = models.DecimalField(max_digits=20, decimal_places=8)
+    token_contract = models.ForeignKey(SmartContract, on_delete=models.CASCADE, related_name='rewards')
+    
+    # Evaluation
+    evaluator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='evaluated_rewards')
+    evaluation_notes = models.TextField(blank=True)
+    evaluation_score = models.IntegerField(null=True, blank=True)  # 1-10 scale
+    
+    # Payment
+    payment_transaction = models.ForeignKey(BlockchainTransaction, on_delete=models.SET_NULL, null=True, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    
+    # Metadata
+    contribution_url = models.URLField(blank=True)  # Link to PR, issue, etc.
+    metadata = models.JSONField(default=dict)
+    
+    class Meta:
+        verbose_name = 'Tokenized Reward'
+        verbose_name_plural = 'Tokenized Rewards'
+        ordering = ['-created']
+        indexes = [
+            models.Index(fields=['recipient', 'status']),
+            models.Index(fields=['organization', 'reward_type']),
+            models.Index(fields=['status', 'created']),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} - {self.recipient.username} ({self.token_amount})"
+
+
+class DecentralizedStorage(BaseModel):
+    """Decentralized file storage integration."""
+    STORAGE_TYPES = [
+        ('ipfs', 'IPFS'),
+        ('arweave', 'Arweave'),
+        ('swarm', 'Swarm'),
+        ('sia', 'Sia'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('uploading', 'Uploading'),
+        ('uploaded', 'Uploaded'),
+        ('pinned', 'Pinned'),
+        ('failed', 'Failed'),
+    ]
+    
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='decentralized_storage')
+    storage_type = models.CharField(max_length=20, choices=STORAGE_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='uploading')
+    
+    # File details
+    original_filename = models.CharField(max_length=255)
+    file_size = models.BigIntegerField()
+    content_type = models.CharField(max_length=100)
+    file_hash = models.CharField(max_length=64)  # SHA-256 hash
+    
+    # Storage details
+    storage_hash = models.CharField(max_length=255)  # IPFS hash, Arweave ID, etc.
+    storage_url = models.URLField(blank=True)
+    pin_status = models.BooleanField(default=False)
+    
+    # Related entities
+    related_invoice = models.ForeignKey('finance.Invoice', on_delete=models.SET_NULL, null=True, blank=True)
+    related_contract = models.ForeignKey('SmartContract', on_delete=models.SET_NULL, null=True, blank=True)
+    related_document = models.ForeignKey('hr.Document', on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Metadata
+    description = models.TextField(blank=True)
+    tags = models.JSONField(default=list)
+    metadata = models.JSONField(default=dict)
+    
+    class Meta:
+        verbose_name = 'Decentralized Storage'
+        verbose_name_plural = 'Decentralized Storage'
+        ordering = ['-created']
+        indexes = [
+            models.Index(fields=['storage_hash']),
+            models.Index(fields=['file_hash']),
+            models.Index(fields=['organization', 'storage_type']),
+            models.Index(fields=['status', 'created']),
+        ]
+    
+    def __str__(self):
+        return f"{self.original_filename} ({self.storage_type})"
+
+
+class BlockchainAuditLog(BaseModel):
+    """Blockchain-based audit logs for transparency."""
+    LOG_TYPES = [
+        ('user_action', 'User Action'),
+        ('system_event', 'System Event'),
+        ('transaction', 'Transaction'),
+        ('data_change', 'Data Change'),
+        ('access_attempt', 'Access Attempt'),
+        ('security_event', 'Security Event'),
+    ]
+    
+    SEVERITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    ]
+    
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='audit_logs')
+    log_type = models.CharField(max_length=20, choices=LOG_TYPES)
+    severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES, default='medium')
+    
+    # Event details
+    event_name = models.CharField(max_length=100)
+    description = models.TextField()
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='audit_logs')
+    
+    # Data
+    old_data = models.JSONField(default=dict, blank=True)
+    new_data = models.JSONField(default=dict, blank=True)
+    affected_models = models.JSONField(default=list)
+    
+    # Blockchain anchoring
+    is_anchored = models.BooleanField(default=False)
+    anchor = models.ForeignKey(OnChainAnchor, on_delete=models.SET_NULL, null=True, blank=True)
+    transaction_hash = models.CharField(max_length=66, blank=True)
+    block_number = models.BigIntegerField(null=True, blank=True)
+    
+    # Metadata
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    session_id = models.CharField(max_length=100, blank=True)
+    metadata = models.JSONField(default=dict)
+    
+    class Meta:
+        verbose_name = 'Blockchain Audit Log'
+        verbose_name_plural = 'Blockchain Audit Logs'
+        ordering = ['-created']
+        indexes = [
+            models.Index(fields=['organization', 'log_type']),
+            models.Index(fields=['user', 'created']),
+            models.Index(fields=['severity', 'created']),
+            models.Index(fields=['is_anchored', 'created']),
+        ]
+    
+    def __str__(self):
+        return f"{self.event_name} - {self.user.username if self.user else 'System'}"

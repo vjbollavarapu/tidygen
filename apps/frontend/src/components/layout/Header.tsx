@@ -12,9 +12,33 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { NetworkStatus } from "@/components/common/NetworkStatus";
 
 export function Header() {
   const { setTheme, theme } = useTheme();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  const getUserInitials = () => {
+    if (!user) return 'U';
+    return `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() || user.email[0].toUpperCase();
+  };
+
+  const getUserDisplayName = () => {
+    if (!user) return 'User';
+    return `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+  };
   
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
@@ -32,6 +56,8 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+          <NetworkStatus />
+          
           <Button variant="ghost" size="sm" className="relative">
             <Bell className="h-5 w-5" />
             <Badge className="absolute -right-1 -top-1 h-5 w-5 justify-center p-0 text-xs">
@@ -54,7 +80,7 @@ export function Header() {
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-gradient-primary text-white">
-                    JD
+                    {getUserInitials()}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -62,9 +88,9 @@ export function Header() {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium">John Doe</p>
+                  <p className="font-medium">{getUserDisplayName()}</p>
                   <p className="w-48 truncate text-sm text-muted-foreground">
-                    manager@ineat-cleaning.com
+                    {user?.email || 'user@example.com'}
                   </p>
                 </div>
               </div>
@@ -78,7 +104,7 @@ export function Header() {
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>

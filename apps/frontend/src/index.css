@@ -1,9 +1,9 @@
+/* iNEAT-ERP Enterprise Design System */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* iNEAT-ERP Enterprise Design System */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -177,6 +177,16 @@
 
   /* Chart Container */
   .chart-container {
-    @apply enterprise-card p-6 h-80;
+    @apply enterprise-card overflow-hidden;
+    min-height: 320px;
+    max-height: 400px;
+  }
+  
+  .chart-container .card-header {
+    @apply pb-2;
+  }
+  
+  .chart-container .card-content {
+    @apply flex-1 flex flex-col;
   }
 }

@@ -1,191 +1,325 @@
-import { useState } from "react";
-import { Plus, Package, AlertTriangle, TrendingDown, CheckCircle } from "lucide-react";
-import { DataTable, Column } from "@/components/common/DataTable";
+import { useState, useEffect } from "react";
+import { Plus, Search, Filter, Download, Upload, Package, AlertTriangle, Edit, Trash2, Eye, TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-// Mock inventory data
-const inventoryData = [
-  {
-    id: 1,
-    name: "All-Purpose Cleaner",
-    category: "Cleaning Supplies",
-    sku: "APC-001",
-    currentStock: 45,
-    minStock: 20,
-    maxStock: 100,
-    unit: "Bottles",
-    unitCost: 8.50,
-    supplier: "CleanCorp Inc",
-    location: "Storage A-1",
-    status: "In Stock",
-    lastRestocked: "2024-01-10",
-  },
-  {
-    id: 2,
-    name: "Microfiber Cloths",
-    category: "Equipment",
-    sku: "MFC-002",
-    currentStock: 15,
-    minStock: 25,
-    maxStock: 75,
-    unit: "Packs",
-    unitCost: 12.00,
-    supplier: "SupplyMax",
-    location: "Storage B-2",
-    status: "Low Stock",
-    lastRestocked: "2024-01-05",
-  },
-  {
-    id: 3,
-    name: "Industrial Vacuum Bags",
-    category: "Equipment",
-    sku: "IVB-003",
-    currentStock: 8,
-    minStock: 15,
-    maxStock: 50,
-    unit: "Boxes",
-    unitCost: 25.00,
-    supplier: "VacuumPro",
-    location: "Storage C-1",
-    status: "Critical",
-    lastRestocked: "2023-12-28",
-  },
-  {
-    id: 4,
-    name: "Disinfectant Spray",
-    category: "Cleaning Supplies",
-    sku: "DS-004",
-    currentStock: 67,
-    minStock: 30,
-    maxStock: 100,
-    unit: "Bottles",
-    unitCost: 6.75,
-    supplier: "HygieneFirst",
-    location: "Storage A-3",
-    status: "In Stock",
-    lastRestocked: "2024-01-12",
-  },
-  {
-    id: 5,
-    name: "Floor Polish",
-    category: "Cleaning Supplies",
-    sku: "FP-005",
-    currentStock: 0,
-    minStock: 10,
-    maxStock: 40,
-    unit: "Gallons",
-    unitCost: 18.00,
-    supplier: "FloorCare Pro",
-    location: "Storage A-2",
-    status: "Out of Stock",
-    lastRestocked: "2023-12-15",
-  },
-];
-
-const columns: Column[] = [
-  {
-    key: "name",
-    label: "Item",
-    sortable: true,
-    render: (value, row) => (
-      <div>
-        <div className="font-medium">{value}</div>
-        <div className="text-sm text-muted-foreground">SKU: {row.sku}</div>
-      </div>
-    ),
-  },
-  {
-    key: "category",
-    label: "Category",
-    sortable: true,
-  },
-  {
-    key: "currentStock",
-    label: "Stock Level",
-    sortable: true,
-    render: (value, row) => (
-      <div>
-        <div className="font-medium">
-          {value} {row.unit}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          Min: {row.minStock} | Max: {row.maxStock}
-        </div>
-      </div>
-    ),
-  },
-  {
-    key: "status",
-    label: "Status",
-    render: (value) => (
-      <Badge
-        variant={
-          value === "In Stock"
-            ? "default"
-            : value === "Low Stock"
-            ? "secondary"
-            : value === "Critical"
-            ? "destructive"
-            : "outline"
-        }
-      >
-        {value}
-      </Badge>
-    ),
-  },
-  {
-    key: "unitCost",
-    label: "Unit Cost",
-    sortable: true,
-    render: (value) => `$${value.toFixed(2)}`,
-  },
-  {
-    key: "supplier",
-    label: "Supplier",
-  },
-];
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataTable } from "@/components/common/DataTable";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { inventoryService, Product, ProductCategory, Supplier, StockMovement, PurchaseOrder, InventorySummary } from "@/services/inventoryService";
+import { ProductForm } from "@/components/inventory/ProductForm";
+import { CategoryForm } from "@/components/inventory/CategoryForm";
+import { SupplierForm } from "@/components/inventory/SupplierForm";
+import { StockAdjustmentForm } from "@/components/inventory/StockAdjustmentForm";
+import { PurchaseOrderForm } from "@/components/inventory/PurchaseOrderForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function InventoryManagement() {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [activeTab, setActiveTab] = useState("products");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedCategoryItem, setSelectedCategoryItem] = useState<ProductCategory | null>(null);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [isProductFormOpen, setIsProductFormOpen] = useState(false);
+  const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false);
+  const [isSupplierFormOpen, setIsSupplierFormOpen] = useState(false);
+  const [isStockAdjustmentOpen, setIsStockAdjustmentOpen] = useState(false);
+  const [isPurchaseOrderFormOpen, setIsPurchaseOrderFormOpen] = useState(false);
 
-  // Calculate inventory stats
-  const totalItems = inventoryData.length;
-  const lowStockItems = inventoryData.filter(item => 
-    item.status === "Low Stock" || item.status === "Critical" || item.status === "Out of Stock"
-  ).length;
-  const inStockItems = inventoryData.filter(item => item.status === "In Stock").length;
-  const totalValue = inventoryData.reduce((sum, item) => sum + (item.currentStock * item.unitCost), 0);
+  // Fetch data from backend
+  const { data: inventorySummaryResponse, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
+    queryKey: ['inventorySummary'],
+    queryFn: () => inventoryService.getInventorySummary()
+  });
 
-  const handleView = (item: any) => {
-    console.log("View item:", item);
+  const { data: productsResponse, isLoading: productsLoading, refetch: refetchProducts } = useQuery({
+    queryKey: ['products', searchTerm],
+    queryFn: () => inventoryService.getProducts({ search: searchTerm, page_size: 100 })
+  });
+
+  const { data: categoriesResponse, isLoading: categoriesLoading, refetch: refetchCategories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => inventoryService.getCategories()
+  });
+
+  const { data: suppliersResponse, isLoading: suppliersLoading, refetch: refetchSuppliers } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: () => inventoryService.getSuppliers({ page_size: 100 })
+  });
+
+  const { data: stockMovementsResponse, isLoading: movementsLoading, refetch: refetchMovements } = useQuery({
+    queryKey: ['stockMovements'],
+    queryFn: () => inventoryService.getStockMovements({ page_size: 50 })
+  });
+
+  const { data: purchaseOrdersResponse, isLoading: ordersLoading, refetch: refetchOrders } = useQuery({
+    queryKey: ['purchaseOrders'],
+    queryFn: () => inventoryService.getPurchaseOrders({ page_size: 50 })
+  });
+
+  const inventorySummary = inventorySummaryResponse?.data;
+  const products = productsResponse?.data;
+  const categories = categoriesResponse?.data;
+  const suppliers = suppliersResponse?.data;
+  const stockMovements = stockMovementsResponse?.data;
+  const purchaseOrders = purchaseOrdersResponse?.data;
+
+  const isLoading = summaryLoading || productsLoading || categoriesLoading || suppliersLoading || movementsLoading || ordersLoading;
+
+  // Product columns
+  const productColumns = [
+    {
+      key: "name",
+      header: "Product Name",
+      render: (row: Product) => (
+        <div>
+          <div className="font-medium">{row.name}</div>
+          <div className="text-sm text-muted-foreground">{row.sku}</div>
+        </div>
+      ),
+    },
+    {
+      key: "category_name",
+      header: "Category",
+      render: (row: Product) => row.category_name || "Uncategorized",
+    },
+    {
+      key: "current_stock",
+      header: "Stock",
+      render: (row: Product) => (
+        <div className="text-center">
+          <div className="font-medium">{row.current_stock}</div>
+          <div className="text-xs text-muted-foreground">Min: {row.min_stock_level}</div>
+        </div>
+      ),
+    },
+    {
+      key: "cost_price",
+      header: "Cost Price",
+      render: (row: Product) => `$${row.cost_price.toFixed(2)}`,
+    },
+    {
+      key: "selling_price",
+      header: "Selling Price",
+      render: (row: Product) => `$${row.selling_price.toFixed(2)}`,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (row: Product) => {
+        let status = "In Stock";
+        let variant: "default" | "secondary" | "destructive" = "default";
+        
+        if (row.current_stock === 0) {
+          status = "Out of Stock";
+          variant = "destructive";
+        } else if (row.current_stock <= row.min_stock_level) {
+          status = "Low Stock";
+          variant = "secondary";
+        }
+        
+        return <Badge variant={variant}>{status}</Badge>;
+      },
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (row: Product) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedProduct(row);
+              setIsStockAdjustmentOpen(true);
+            }}
+          >
+            <TrendingUp className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedProduct(row);
+              setIsProductFormOpen(true);
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  // Category columns
+  const categoryColumns = [
+    {
+      key: "name",
+      header: "Category Name",
+    },
+    {
+      key: "description",
+      header: "Description",
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (row: ProductCategory) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedCategoryItem(row);
+              setIsCategoryFormOpen(true);
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  // Supplier columns
+  const supplierColumns = [
+    {
+      key: "name",
+      header: "Supplier Name",
+    },
+    {
+      key: "contact_person",
+      header: "Contact Person",
+    },
+    {
+      key: "email",
+      header: "Email",
+    },
+    {
+      key: "phone",
+      header: "Phone",
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (row: Supplier) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedSupplier(row);
+              setIsSupplierFormOpen(true);
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  // Stock movement columns
+  const movementColumns = [
+    {
+      key: "product_name",
+      header: "Product",
+    },
+    {
+      key: "movement_type",
+      header: "Type",
+      render: (row: StockMovement) => (
+        <Badge variant={row.movement_type === 'in' ? 'default' : 'secondary'}>
+          {row.movement_type}
+        </Badge>
+      ),
+    },
+    {
+      key: "quantity",
+      header: "Quantity",
+      render: (row: StockMovement) => (
+        <span className={row.quantity > 0 ? 'text-green-600' : 'text-red-600'}>
+          {row.quantity > 0 ? '+' : ''}{row.quantity}
+        </span>
+      ),
+    },
+    {
+      key: "reference_number",
+      header: "Reference",
+    },
+    {
+      key: "created",
+      header: "Date",
+      render: (row: StockMovement) => new Date(row.created).toLocaleDateString(),
+    },
+  ];
+
+  // Purchase order columns
+  const orderColumns = [
+    {
+      key: "order_number",
+      header: "Order Number",
+    },
+    {
+      key: "supplier_name",
+      header: "Supplier",
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (row: PurchaseOrder) => (
+        <Badge variant={
+          row.status === 'received' ? 'default' :
+          row.status === 'confirmed' ? 'secondary' :
+          row.status === 'cancelled' ? 'destructive' : 'outline'
+        }>
+          {row.status}
+        </Badge>
+      ),
+    },
+    {
+      key: "total_amount",
+      header: "Total Amount",
+      render: (row: PurchaseOrder) => `$${row.total_amount.toFixed(2)}`,
+    },
+    {
+      key: "order_date",
+      header: "Order Date",
+      render: (row: PurchaseOrder) => new Date(row.order_date).toLocaleDateString(),
+    },
+  ];
+
+  const handleFormSuccess = () => {
+    setIsProductFormOpen(false);
+    setIsCategoryFormOpen(false);
+    setIsSupplierFormOpen(false);
+    setIsStockAdjustmentOpen(false);
+    setIsPurchaseOrderFormOpen(false);
+    setSelectedProduct(null);
+    setSelectedCategoryItem(null);
+    setSelectedSupplier(null);
+    refetchProducts();
+    refetchCategories();
+    refetchSuppliers();
+    refetchMovements();
+    refetchOrders();
+    refetchSummary();
   };
 
-  const handleEdit = (item: any) => {
-    console.log("Edit item:", item);
-  };
-
-  const handleDelete = (item: any) => {
-    console.log("Delete item:", item);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading inventory data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -194,165 +328,207 @@ export default function InventoryManagement() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Inventory Management</h1>
           <p className="text-muted-foreground">
-            Track and manage your cleaning supplies and equipment
+            Manage your cleaning supplies, equipment, and stock levels
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            Generate Report
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Export
           </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="btn-enterprise">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New Inventory Item</DialogTitle>
-                <DialogDescription>
-                  Add a new item to your inventory management system.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="itemName">Item Name</Label>
-                    <Input id="itemName" placeholder="Enter item name" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sku">SKU</Label>
-                    <Input id="sku" placeholder="Item SKU code" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cleaning-supplies">Cleaning Supplies</SelectItem>
-                        <SelectItem value="equipment">Equipment</SelectItem>
-                        <SelectItem value="safety">Safety Equipment</SelectItem>
-                        <SelectItem value="tools">Tools</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="unit">Unit</Label>
-                    <Input id="unit" placeholder="e.g., Bottles, Packs" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="currentStock">Current Stock</Label>
-                    <Input id="currentStock" type="number" placeholder="0" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="minStock">Min Stock</Label>
-                    <Input id="minStock" type="number" placeholder="0" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="maxStock">Max Stock</Label>
-                    <Input id="maxStock" type="number" placeholder="0" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="unitCost">Unit Cost</Label>
-                    <Input id="unitCost" type="number" step="0.01" placeholder="0.00" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="supplier">Supplier</Label>
-                    <Input id="supplier" placeholder="Supplier name" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Storage Location</Label>
-                  <Input id="location" placeholder="e.g., Storage A-1" />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => setIsAddDialogOpen(false)}>
-                  Add Item
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button variant="outline" size="sm">
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
+          {activeTab === "products" && (
+            <Button size="sm" onClick={() => setIsProductFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
+          )}
+          {activeTab === "categories" && (
+            <Button size="sm" onClick={() => setIsCategoryFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Category
+            </Button>
+          )}
+          {activeTab === "suppliers" && (
+            <Button size="sm" onClick={() => setIsSupplierFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Supplier
+            </Button>
+          )}
+          {activeTab === "orders" && (
+            <Button size="sm" onClick={() => setIsPurchaseOrderFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Order
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Package className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Items</p>
-              <p className="text-2xl font-bold">{totalItems}</p>
-            </div>
-          </div>
+      {/* Quick Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{inventorySummary?.total_products || 0}</div>
+            <p className="text-xs text-muted-foreground">Active products</p>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-success/10 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-success" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">In Stock</p>
-              <p className="text-2xl font-bold">{inStockItems}</p>
-            </div>
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-warning" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{inventorySummary?.low_stock_products || 0}</div>
+            <p className="text-xs text-muted-foreground">Need reordering</p>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-warning/10 rounded-lg">
-              <AlertTriangle className="h-5 w-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Low/Out of Stock</p>
-              <p className="text-2xl font-bold">{lowStockItems}</p>
-            </div>
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{inventorySummary?.out_of_stock_products || 0}</div>
+            <p className="text-xs text-muted-foreground">Urgent attention</p>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent/10 rounded-lg">
-              <TrendingDown className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Value</p>
-              <p className="text-2xl font-bold">${totalValue.toFixed(0)}</p>
-            </div>
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${inventorySummary?.total_stock_value?.toLocaleString() || 0}</div>
+            <p className="text-xs text-muted-foreground">Inventory value</p>
+          </CardContent>
         </Card>
       </div>
 
-      {/* Inventory Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Inventory Items</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            data={inventoryData}
-            columns={columns}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            searchable
-            filterable
-          />
-        </CardContent>
-      </Card>
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
+          <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
+          <TabsTrigger value="movements">Stock Movements</TabsTrigger>
+          <TabsTrigger value="orders">Purchase Orders</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="products" className="space-y-4">
+          {/* Filters */}
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button variant="outline" size="sm">
+              <Filter className="mr-2 h-4 w-4" />
+              Filter
+            </Button>
+          </div>
+
+          {/* Products Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Products</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataTable data={products || []} columns={productColumns} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="categories" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Categories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataTable data={categories || []} columns={categoryColumns} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="suppliers" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Suppliers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataTable data={suppliers || []} columns={supplierColumns} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="movements" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Stock Movements</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataTable data={stockMovements || []} columns={movementColumns} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="orders" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Purchase Orders</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataTable data={purchaseOrders || []} columns={orderColumns} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Forms */}
+      <ProductForm
+        open={isProductFormOpen}
+        onOpenChange={setIsProductFormOpen}
+        product={selectedProduct}
+        onSuccess={handleFormSuccess}
+      />
+
+      <CategoryForm
+        open={isCategoryFormOpen}
+        onOpenChange={setIsCategoryFormOpen}
+        category={selectedCategoryItem}
+        onSuccess={handleFormSuccess}
+      />
+
+      <SupplierForm
+        open={isSupplierFormOpen}
+        onOpenChange={setIsSupplierFormOpen}
+        supplier={selectedSupplier}
+        onSuccess={handleFormSuccess}
+      />
+
+      <StockAdjustmentForm
+        open={isStockAdjustmentOpen}
+        onOpenChange={setIsStockAdjustmentOpen}
+        product={selectedProduct}
+        onSuccess={handleFormSuccess}
+      />
+
+      <PurchaseOrderForm
+        open={isPurchaseOrderFormOpen}
+        onOpenChange={setIsPurchaseOrderFormOpen}
+        onSuccess={handleFormSuccess}
+      />
     </div>
   );
 }

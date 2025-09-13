@@ -1,454 +1,658 @@
-import { useState } from "react";
-import { Plus, Users, DollarSign, Calendar, Clock } from "lucide-react";
-import { DataTable, Column } from "@/components/common/DataTable";
+import { useState, useEffect } from "react";
+import { Plus, Search, Filter, Download, Upload, Users, DollarSign, Calendar, Clock, UserCheck, FileText, Star, Edit, Eye, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-// Mock employee data
-const employeeData = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    position: "Team Leader",
-    department: "Operations",
-    email: "sarah.j@ineat.com",
-    phone: "+1 (555) 123-4567",
-    hireDate: "2023-03-15",
-    salary: 45000,
-    status: "Active",
-    hoursThisWeek: 40,
-    team: "Team A",
-  },
-  {
-    id: 2,
-    name: "Mike Rodriguez",
-    position: "Cleaner",
-    department: "Operations",
-    email: "mike.r@ineat.com",
-    phone: "+1 (555) 234-5678",
-    hireDate: "2023-06-20",
-    salary: 32000,
-    status: "Active",
-    hoursThisWeek: 38,
-    team: "Team A",
-  },
-  {
-    id: 3,
-    name: "Lisa Chen",
-    position: "Quality Inspector",
-    department: "Quality Control",
-    email: "lisa.c@ineat.com",
-    phone: "+1 (555) 345-6789",
-    hireDate: "2023-01-10",
-    salary: 40000,
-    status: "Active",
-    hoursThisWeek: 40,
-    team: "QC Team",
-  },
-  {
-    id: 4,
-    name: "David Wilson",
-    position: "Driver",
-    department: "Transportation",
-    email: "david.w@ineat.com",
-    phone: "+1 (555) 456-7890",
-    hireDate: "2023-08-05",
-    salary: 35000,
-    status: "On Leave",
-    hoursThisWeek: 0,
-    team: "Transport",
-  },
-];
-
-// Mock payroll data
-const payrollData = [
-  {
-    id: 1,
-    employeeName: "Sarah Johnson",
-    period: "2024-01-01 to 2024-01-15",
-    hoursWorked: 80,
-    hourlyRate: 21.63,
-    grossPay: 1730.40,
-    deductions: 346.08,
-    netPay: 1384.32,
-    status: "Processed",
-  },
-  {
-    id: 2,
-    employeeName: "Mike Rodriguez",
-    period: "2024-01-01 to 2024-01-15",
-    hoursWorked: 76,
-    hourlyRate: 15.38,
-    grossPay: 1168.88,
-    deductions: 233.78,
-    netPay: 935.10,
-    status: "Processed",
-  },
-  {
-    id: 3,
-    employeeName: "Lisa Chen",
-    period: "2024-01-01 to 2024-01-15",
-    hoursWorked: 80,
-    hourlyRate: 19.23,
-    grossPay: 1538.40,
-    deductions: 307.68,
-    netPay: 1230.72,
-    status: "Pending",
-  },
-];
-
-const employeeColumns: Column[] = [
-  {
-    key: "name",
-    label: "Employee",
-    sortable: true,
-    render: (value, row) => (
-      <div>
-        <div className="font-medium">{value}</div>
-        <div className="text-sm text-muted-foreground">{row.position}</div>
-      </div>
-    ),
-  },
-  {
-    key: "department",
-    label: "Department",
-    sortable: true,
-  },
-  {
-    key: "email",
-    label: "Contact",
-    render: (value, row) => (
-      <div>
-        <div className="text-sm">{value}</div>
-        <div className="text-xs text-muted-foreground">{row.phone}</div>
-      </div>
-    ),
-  },
-  {
-    key: "status",
-    label: "Status",
-    render: (value) => (
-      <Badge
-        variant={
-          value === "Active"
-            ? "default"
-            : value === "On Leave"
-            ? "secondary"
-            : "outline"
-        }
-      >
-        {value}
-      </Badge>
-    ),
-  },
-  {
-    key: "hoursThisWeek",
-    label: "Hours This Week",
-    sortable: true,
-  },
-  {
-    key: "salary",
-    label: "Annual Salary",
-    sortable: true,
-    render: (value) => `$${value.toLocaleString()}`,
-  },
-];
-
-const payrollColumns: Column[] = [
-  {
-    key: "employeeName",
-    label: "Employee",
-    sortable: true,
-  },
-  {
-    key: "period",
-    label: "Pay Period",
-    sortable: true,
-  },
-  {
-    key: "hoursWorked",
-    label: "Hours",
-    sortable: true,
-  },
-  {
-    key: "grossPay",
-    label: "Gross Pay",
-    sortable: true,
-    render: (value) => `$${value.toFixed(2)}`,
-  },
-  {
-    key: "netPay",
-    label: "Net Pay",
-    sortable: true,
-    render: (value) => `$${value.toFixed(2)}`,
-  },
-  {
-    key: "status",
-    label: "Status",
-    render: (value) => (
-      <Badge variant={value === "Processed" ? "default" : "secondary"}>
-        {value}
-      </Badge>
-    ),
-  },
-];
+import { DataTable } from "@/components/common/DataTable";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { hrService, Employee, Attendance, Payroll, PerformanceReview, LeaveRequest, HRSummary } from "@/services/hrService";
+import { EmployeeForm } from "@/components/hr/EmployeeForm";
+import { AttendanceForm } from "@/components/hr/AttendanceForm";
+import { PayrollForm } from "@/components/hr/PayrollForm";
+import { PerformanceReviewForm } from "@/components/hr/PerformanceReviewForm";
+import { LeaveRequestForm } from "@/components/hr/LeaveRequestForm";
+import { EmployeeDetailsModal } from "@/components/hr/EmployeeDetailsModal";
 
 export default function HRManagement() {
-  const [isEmployeeDialogOpen, setIsEmployeeDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("employees");
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isEmployeeFormOpen, setIsEmployeeFormOpen] = useState(false);
+  const [isAttendanceFormOpen, setIsAttendanceFormOpen] = useState(false);
+  const [isPayrollFormOpen, setIsPayrollFormOpen] = useState(false);
+  const [isPerformanceReviewFormOpen, setIsPerformanceReviewFormOpen] = useState(false);
+  const [isLeaveRequestFormOpen, setIsLeaveRequestFormOpen] = useState(false);
+  const [isEmployeeDetailsOpen, setIsEmployeeDetailsOpen] = useState(false);
 
-  // Calculate HR stats
-  const totalEmployees = employeeData.length;
-  const activeEmployees = employeeData.filter(emp => emp.status === "Active").length;
-  const totalHoursThisWeek = employeeData.reduce((sum, emp) => sum + emp.hoursThisWeek, 0);
-  const totalPayroll = payrollData.reduce((sum, pay) => sum + pay.netPay, 0);
+  // Fetch data from backend
+  const { data: hrSummaryResponse, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
+    queryKey: ['hrSummary'],
+    queryFn: () => hrService.getHRSummary()
+  });
 
-  const handleView = (item: any) => {
-    console.log("View item:", item);
+  const { data: employeesResponse, isLoading: employeesLoading, refetch: refetchEmployees } = useQuery({
+    queryKey: ['employees', searchTerm],
+    queryFn: () => hrService.getEmployees({ search: searchTerm, page_size: 100 })
+  });
+
+  const { data: attendanceResponse, isLoading: attendanceLoading, refetch: refetchAttendance } = useQuery({
+    queryKey: ['attendance'],
+    queryFn: () => hrService.getAttendance({ page_size: 50 })
+  });
+
+  const { data: payrollResponse, isLoading: payrollLoading, refetch: refetchPayroll } = useQuery({
+    queryKey: ['payroll'],
+    queryFn: () => hrService.getPayroll({ page_size: 50 })
+  });
+
+  const { data: performanceReviewsResponse, isLoading: reviewsLoading, refetch: refetchReviews } = useQuery({
+    queryKey: ['performanceReviews'],
+    queryFn: () => hrService.getPerformanceReviews({ page_size: 50 })
+  });
+
+  const { data: leaveRequestsResponse, isLoading: leaveLoading, refetch: refetchLeaveRequests } = useQuery({
+    queryKey: ['leaveRequests'],
+    queryFn: () => hrService.getLeaveRequests({ page_size: 50 })
+  });
+
+  const hrSummary = hrSummaryResponse?.data;
+  const employees = employeesResponse?.data;
+  const attendance = attendanceResponse?.data;
+  const payroll = payrollResponse?.data;
+  const performanceReviews = performanceReviewsResponse?.data;
+  const leaveRequests = leaveRequestsResponse?.data;
+
+  const isLoading = summaryLoading || employeesLoading || attendanceLoading || payrollLoading || reviewsLoading || leaveLoading;
+
+  // Employee columns
+  const employeeColumns = [
+    {
+      key: "name",
+      header: "Employee",
+      render: (row: Employee) => (
+        <div>
+          <div className="font-medium">{row.first_name} {row.last_name}</div>
+          <div className="text-sm text-muted-foreground">{row.employee_id}</div>
+        </div>
+      ),
+    },
+    {
+      key: "position",
+      header: "Position",
+      render: (row: Employee) => (
+        <div>
+          <div className="font-medium text-sm">{row.position}</div>
+          <div className="text-xs text-muted-foreground">{row.department}</div>
+        </div>
+      ),
+    },
+    {
+      key: "contact",
+      header: "Contact",
+      render: (row: Employee) => (
+        <div>
+          <div className="font-medium text-sm">{row.email}</div>
+          <div className="text-xs text-muted-foreground">{row.phone}</div>
+        </div>
+      ),
+    },
+    {
+      key: "employment_type",
+      header: "Type",
+      render: (row: Employee) => (
+        <Badge variant="outline">
+          {row.employment_type.replace('_', ' ')}
+        </Badge>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (row: Employee) => (
+        <Badge variant={
+          row.status === 'active' ? 'default' :
+          row.status === 'on_leave' ? 'secondary' :
+          row.status === 'terminated' ? 'destructive' : 'outline'
+        }>
+          {row.status.replace('_', ' ')}
+        </Badge>
+      ),
+    },
+    {
+      key: "salary",
+      header: "Salary",
+      render: (row: Employee) => `$${row.salary.toLocaleString()}`,
+    },
+    {
+      key: "hire_date",
+      header: "Hire Date",
+      render: (row: Employee) => new Date(row.hire_date).toLocaleDateString(),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (row: Employee) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedEmployee(row);
+              setIsEmployeeDetailsOpen(true);
+            }}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedEmployee(row);
+              setIsEmployeeFormOpen(true);
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  // Attendance columns
+  const attendanceColumns = [
+    {
+      key: "employee_name",
+      header: "Employee",
+    },
+    {
+      key: "date",
+      header: "Date",
+      render: (row: Attendance) => new Date(row.date).toLocaleDateString(),
+    },
+    {
+      key: "check_in_time",
+      header: "Check In",
+      render: (row: Attendance) => row.check_in_time || "N/A",
+    },
+    {
+      key: "check_out_time",
+      header: "Check Out",
+      render: (row: Attendance) => row.check_out_time || "N/A",
+    },
+    {
+      key: "total_hours",
+      header: "Hours",
+      render: (row: Attendance) => row.total_hours ? `${row.total_hours}h` : "N/A",
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (row: Attendance) => (
+        <Badge variant={
+          row.status === 'present' ? 'default' :
+          row.status === 'late' ? 'secondary' :
+          row.status === 'absent' ? 'destructive' : 'outline'
+        }>
+          {row.status.replace('_', ' ')}
+        </Badge>
+      ),
+    },
+  ];
+
+  // Payroll columns
+  const payrollColumns = [
+    {
+      key: "employee_name",
+      header: "Employee",
+    },
+    {
+      key: "pay_period_start",
+      header: "Pay Period",
+      render: (row: Payroll) => (
+        <div>
+          <div className="text-sm">{new Date(row.pay_period_start).toLocaleDateString()}</div>
+          <div className="text-xs text-muted-foreground">to {new Date(row.pay_period_end).toLocaleDateString()}</div>
+        </div>
+      ),
+    },
+    {
+      key: "gross_salary",
+      header: "Gross Pay",
+      render: (row: Payroll) => `$${row.gross_salary.toFixed(2)}`,
+    },
+    {
+      key: "deductions",
+      header: "Deductions",
+      render: (row: Payroll) => `$${row.deductions.toFixed(2)}`,
+    },
+    {
+      key: "net_salary",
+      header: "Net Pay",
+      render: (row: Payroll) => `$${row.net_salary.toFixed(2)}`,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (row: Payroll) => (
+        <Badge variant={
+          row.status === 'paid' ? 'default' :
+          row.status === 'approved' ? 'secondary' :
+          row.status === 'draft' ? 'outline' : 'destructive'
+        }>
+          {row.status}
+        </Badge>
+      ),
+    },
+  ];
+
+  // Performance Review columns
+  const performanceReviewColumns = [
+    {
+      key: "employee_name",
+      header: "Employee",
+    },
+    {
+      key: "review_period_start",
+      header: "Review Period",
+      render: (row: PerformanceReview) => (
+        <div>
+          <div className="text-sm">{new Date(row.review_period_start).toLocaleDateString()}</div>
+          <div className="text-xs text-muted-foreground">to {new Date(row.review_period_end).toLocaleDateString()}</div>
+        </div>
+      ),
+    },
+    {
+      key: "overall_rating",
+      header: "Rating",
+      render: (row: PerformanceReview) => (
+        <div className="flex items-center gap-1">
+          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+          <span className="font-medium">{row.overall_rating}/5</span>
+        </div>
+      ),
+    },
+    {
+      key: "goals_achieved",
+      header: "Goals",
+      render: (row: PerformanceReview) => `${row.goals_achieved}/${row.goals_total}`,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (row: PerformanceReview) => (
+        <Badge variant={
+          row.status === 'completed' ? 'default' :
+          row.status === 'approved' ? 'secondary' :
+          row.status === 'submitted' ? 'outline' : 'secondary'
+        }>
+          {row.status}
+        </Badge>
+      ),
+    },
+  ];
+
+  // Leave Request columns
+  const leaveRequestColumns = [
+    {
+      key: "employee_name",
+      header: "Employee",
+    },
+    {
+      key: "leave_type",
+      header: "Leave Type",
+      render: (row: LeaveRequest) => (
+        <Badge variant="outline">
+          {row.leave_type.replace('_', ' ')}
+        </Badge>
+      ),
+    },
+    {
+      key: "start_date",
+      header: "Start Date",
+      render: (row: LeaveRequest) => new Date(row.start_date).toLocaleDateString(),
+    },
+    {
+      key: "end_date",
+      header: "End Date",
+      render: (row: LeaveRequest) => new Date(row.end_date).toLocaleDateString(),
+    },
+    {
+      key: "total_days",
+      header: "Days",
+      render: (row: LeaveRequest) => `${row.total_days} days`,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (row: LeaveRequest) => (
+        <Badge variant={
+          row.status === 'approved' ? 'default' :
+          row.status === 'pending' ? 'secondary' :
+          row.status === 'rejected' ? 'destructive' : 'outline'
+        }>
+          {row.status}
+        </Badge>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (row: LeaveRequest) => (
+        <div className="flex items-center gap-2">
+          {row.status === 'pending' && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Handle approve leave request
+                  console.log("Approve leave request:", row.id);
+                }}
+              >
+                <CheckCircle className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Handle reject leave request
+                  console.log("Reject leave request:", row.id);
+                }}
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  const handleFormSuccess = () => {
+    setIsEmployeeFormOpen(false);
+    setIsAttendanceFormOpen(false);
+    setIsPayrollFormOpen(false);
+    setIsPerformanceReviewFormOpen(false);
+    setIsLeaveRequestFormOpen(false);
+    setSelectedEmployee(null);
+    refetchEmployees();
+    refetchAttendance();
+    refetchPayroll();
+    refetchReviews();
+    refetchLeaveRequests();
+    refetchSummary();
   };
 
-  const handleEdit = (item: any) => {
-    console.log("Edit item:", item);
-  };
-
-  const handleDelete = (item: any) => {
-    console.log("Delete item:", item);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading HR data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">HR & Payroll</h1>
+          <h1 className="text-3xl font-bold text-foreground">HR Management</h1>
           <p className="text-muted-foreground">
-            Manage employees, attendance, and payroll processing
+            Manage employees, attendance, payroll, and performance
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            Generate Report
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Export
           </Button>
-          <Dialog open={isEmployeeDialogOpen} onOpenChange={setIsEmployeeDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="btn-enterprise">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Employee
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New Employee</DialogTitle>
-                <DialogDescription>
-                  Add a new employee to your team.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="employeeName">Full Name</Label>
-                    <Input id="employeeName" placeholder="Enter employee name" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="position">Position</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select position" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="team-leader">Team Leader</SelectItem>
-                        <SelectItem value="cleaner">Cleaner</SelectItem>
-                        <SelectItem value="driver">Driver</SelectItem>
-                        <SelectItem value="inspector">Quality Inspector</SelectItem>
-                        <SelectItem value="supervisor">Supervisor</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="operations">Operations</SelectItem>
-                        <SelectItem value="quality-control">Quality Control</SelectItem>
-                        <SelectItem value="transportation">Transportation</SelectItem>
-                        <SelectItem value="administration">Administration</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="team">Team</Label>
-                    <Input id="team" placeholder="e.g., Team A" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="employee@ineat.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" placeholder="+1 (555) 123-4567" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="hireDate">Hire Date</Label>
-                    <Input id="hireDate" type="date" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="salary">Annual Salary</Label>
-                    <Input id="salary" type="number" placeholder="35000" />
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsEmployeeDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => setIsEmployeeDialogOpen(false)}>
-                  Add Employee
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button variant="outline" size="sm">
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
+          {activeTab === "employees" && (
+            <Button size="sm" onClick={() => setIsEmployeeFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Employee
+            </Button>
+          )}
+          {activeTab === "attendance" && (
+            <Button size="sm" onClick={() => setIsAttendanceFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Record Attendance
+            </Button>
+          )}
+          {activeTab === "payroll" && (
+            <Button size="sm" onClick={() => setIsPayrollFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Process Payroll
+            </Button>
+          )}
+          {activeTab === "performance" && (
+            <Button size="sm" onClick={() => setIsPerformanceReviewFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Review
+            </Button>
+          )}
+          {activeTab === "leave" && (
+            <Button size="sm" onClick={() => setIsLeaveRequestFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Request Leave
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Employees</p>
-              <p className="text-2xl font-bold">{totalEmployees}</p>
-            </div>
-          </div>
+      {/* HR Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{hrSummary?.total_employees || 0}</div>
+            <p className="text-xs text-muted-foreground">+{hrSummary?.new_employees_this_month || 0} this month</p>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-success/10 rounded-lg">
-              <Users className="h-5 w-5 text-success" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Active Employees</p>
-              <p className="text-2xl font-bold">{activeEmployees}</p>
-            </div>
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Employees</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{hrSummary?.active_employees || 0}</div>
+            <p className="text-xs text-muted-foreground">Currently active</p>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent/10 rounded-lg">
-              <Clock className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Hours This Week</p>
-              <p className="text-2xl font-bold">{totalHoursThisWeek}</p>
-            </div>
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Attendance Rate</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{hrSummary?.attendance_rate?.toFixed(1) || 0}%</div>
+            <p className="text-xs text-muted-foreground">This month</p>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-warning/10 rounded-lg">
-              <DollarSign className="h-5 w-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Payroll</p>
-              <p className="text-2xl font-bold">${totalPayroll.toFixed(0)}</p>
-            </div>
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Payroll</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${hrSummary?.total_payroll_cost?.toLocaleString() || 0}</div>
+            <p className="text-xs text-muted-foreground">Monthly cost</p>
+          </CardContent>
         </Card>
       </div>
 
-      {/* Tabs for Employees and Payroll */}
-      <Tabs defaultValue="employees" className="space-y-4">
+      {/* Additional Stats */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">On Leave</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{hrSummary?.employees_on_leave || 0}</div>
+            <p className="text-xs text-muted-foreground">Currently on leave</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{hrSummary?.pending_leave_requests || 0}</div>
+            <p className="text-xs text-muted-foreground">Leave requests</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Reviews Due</CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{hrSummary?.performance_reviews_due || 0}</div>
+            <p className="text-xs text-muted-foreground">Performance reviews</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="employees">Employees</TabsTrigger>
-          <TabsTrigger value="payroll">Payroll</TabsTrigger>
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
+          <TabsTrigger value="payroll">Payroll</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="leave">Leave Requests</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="employees">
+
+        <TabsContent value="employees" className="space-y-4">
+          {/* Filters */}
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search employees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button variant="outline" size="sm">
+              <Filter className="mr-2 h-4 w-4" />
+              Filter
+            </Button>
+          </div>
+
+          {/* Employees Table */}
           <Card>
             <CardHeader>
               <CardTitle>Employee Management</CardTitle>
             </CardHeader>
             <CardContent>
-              <DataTable
-                data={employeeData}
-                columns={employeeColumns}
-                onView={handleView}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                searchable
-                filterable
-              />
+              <DataTable data={employees || []} columns={employeeColumns} />
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="payroll">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Payroll Processing</CardTitle>
-              <Button variant="outline">
-                <Calendar className="h-4 w-4 mr-2" />
-                Process Payroll
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <DataTable
-                data={payrollData}
-                columns={payrollColumns}
-                onView={handleView}
-                onEdit={handleEdit}
-                searchable
-                filterable
-                actions={false}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="attendance">
+
+        <TabsContent value="attendance" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Attendance Tracking</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Attendance tracking feature coming soon...</p>
-              </div>
+              <DataTable data={attendance || []} columns={attendanceColumns} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payroll" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payroll Processing</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataTable data={payroll || []} columns={payrollColumns} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="performance" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Performance Reviews</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataTable data={performanceReviews || []} columns={performanceReviewColumns} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="leave" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Leave Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataTable data={leaveRequests || []} columns={leaveRequestColumns} />
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Forms */}
+      <EmployeeForm
+        open={isEmployeeFormOpen}
+        onOpenChange={setIsEmployeeFormOpen}
+        employee={selectedEmployee}
+        onSuccess={handleFormSuccess}
+      />
+
+      <AttendanceForm
+        open={isAttendanceFormOpen}
+        onOpenChange={setIsAttendanceFormOpen}
+        employee={selectedEmployee}
+        onSuccess={handleFormSuccess}
+      />
+
+      <PayrollForm
+        open={isPayrollFormOpen}
+        onOpenChange={setIsPayrollFormOpen}
+        employee={selectedEmployee}
+        onSuccess={handleFormSuccess}
+      />
+
+      <PerformanceReviewForm
+        open={isPerformanceReviewFormOpen}
+        onOpenChange={setIsPerformanceReviewFormOpen}
+        employee={selectedEmployee}
+        onSuccess={handleFormSuccess}
+      />
+
+      <LeaveRequestForm
+        open={isLeaveRequestFormOpen}
+        onOpenChange={setIsLeaveRequestFormOpen}
+        employee={selectedEmployee}
+        onSuccess={handleFormSuccess}
+      />
+
+      <EmployeeDetailsModal
+        open={isEmployeeDetailsOpen}
+        onOpenChange={setIsEmployeeDetailsOpen}
+        employee={selectedEmployee}
+      />
     </div>
   );
 }

@@ -1,22 +1,59 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Building, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Building, Eye, EyeOff, Mail, Lock, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/contexts/EnhancedAuthContext";
+import { Web3Login } from "@/components/auth/Web3Login";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      const from = location.state?.from?.pathname || "/dashboard";
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, authLoading, navigate, location]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login attempt:", { email, password });
+    setError("");
+    setIsLoading(true);
+
+    try {
+      await login({ email, password });
+      // Navigation will be handled by useEffect
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please check your credentials.");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -46,6 +83,13 @@ export default function Login() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email Field */}
               <div className="space-y-2">
@@ -115,10 +159,45 @@ export default function Login() {
                 type="submit"
                 className="w-full btn-enterprise h-11"
                 size="lg"
+                disabled={isLoading}
               >
-                Sign in to Dashboard
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign in to Dashboard"
+                )}
               </Button>
             </form>
+
+            {/* Web3 Login */}
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with Web3
+                  </span>
+                </div>
+              </div>
+              <div className="mt-4">
+                <Web3Login
+                  onSuccess={(result) => {
+                    console.log('Web3 login successful:', result);
+                    // Handle Web3 login success
+                    navigate('/dashboard');
+                  }}
+                  onError={(error) => {
+                    console.error('Web3 login failed:', error);
+                    setError(error.message);
+                  }}
+                />
+              </div>
+            </div>
 
             {/* Demo Credentials */}
             <div className="mt-6 p-4 bg-muted/30 rounded-lg">

@@ -1,447 +1,473 @@
-import { useState } from "react";
-import { Plus, FileText, DollarSign, Clock, CheckCircle, XCircle } from "lucide-react";
-import { DataTable, Column } from "@/components/common/DataTable";
+import { useState, useEffect } from "react";
+import { Plus, Search, Filter, Download, Upload, DollarSign, FileText, Clock, CheckCircle, XCircle, TrendingUp, TrendingDown, Receipt, CreditCard, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataTable } from "@/components/common/DataTable";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
+import { useInvoices, usePayments, useExpenses } from "@/hooks/useFinanceApi";
+import { financeService, FinancialSummary, RevenueReport, ExpenseReport } from "@/services/financeService";
+import { Invoice, Payment, Expense } from "@/services/api";
+import { InvoiceForm } from "@/components/finance/InvoiceForm";
+import { PaymentForm } from "@/components/finance/PaymentForm";
+import { ExpenseForm } from "@/components/finance/ExpenseForm";
+import { InvoiceDetailsModal } from "@/components/finance/InvoiceDetailsModal";
+import { FinancialReportsModal } from "@/components/finance/FinancialReportsModal";
 
-// Mock invoice data
-const invoiceData = [
-  {
-    id: 1,
-    invoiceNumber: "INV-2024-001",
-    client: "ABC Corporation",
-    amount: 2400.00,
-    dueDate: "2024-01-30",
-    issueDate: "2024-01-15",
-    status: "Paid",
-    services: ["Deep Cleaning", "Regular Maintenance"],
-    paymentDate: "2024-01-28",
-  },
-  {
-    id: 2,
-    invoiceNumber: "INV-2024-002",
-    client: "Downtown Restaurant",
-    amount: 1800.00,
-    dueDate: "2024-02-05",
-    issueDate: "2024-01-20",
-    status: "Pending",
-    services: ["Kitchen Deep Clean", "Dining Area"],
-    paymentDate: null,
-  },
-  {
-    id: 3,
-    invoiceNumber: "INV-2024-003",
-    client: "Johnson Family",
-    amount: 480.00,
-    dueDate: "2024-01-25",
-    issueDate: "2024-01-10",
-    status: "Overdue",
-    services: ["Weekly House Cleaning"],
-    paymentDate: null,
-  },
-  {
-    id: 4,
-    invoiceNumber: "INV-2024-004",
-    client: "Tech Startup Office",
-    amount: 1200.00,
-    dueDate: "2024-02-10",
-    issueDate: "2024-01-25",
-    status: "Draft",
-    services: ["Office Cleaning", "Carpet Cleaning"],
-    paymentDate: null,
-  },
-];
+export default function FinanceManagement() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("invoices");
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isInvoiceFormOpen, setIsInvoiceFormOpen] = useState(false);
+  const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
+  const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
+  const [isInvoiceDetailsOpen, setIsInvoiceDetailsOpen] = useState(false);
+  const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
 
-// Mock expense data
-const expenseData = [
-  {
-    id: 1,
-    description: "Cleaning Supplies Restock",
-    category: "Supplies",
-    amount: 450.00,
-    date: "2024-01-15",
-    vendor: "CleanCorp Inc",
-    status: "Approved",
-  },
-  {
-    id: 2,
-    description: "Vehicle Fuel",
-    category: "Transportation",
-    amount: 125.00,
-    date: "2024-01-18",
-    vendor: "Gas Station",
-    status: "Approved",
-  },
-  {
-    id: 3,
-    description: "Equipment Maintenance",
-    category: "Maintenance",
-    amount: 300.00,
-    date: "2024-01-20",
-    vendor: "Equipment Services",
-    status: "Pending",
-  },
-];
+  // Fetch data from backend using React Query hooks
+  const { data: invoicesData, isLoading: invoicesLoading } = useInvoices({ search: searchTerm });
+  const { data: paymentsData, isLoading: paymentsLoading } = usePayments();
+  const { data: expensesData, isLoading: expensesLoading } = useExpenses();
 
-const invoiceColumns: Column[] = [
-  {
-    key: "invoiceNumber",
-    label: "Invoice #",
-    sortable: true,
-    render: (value, row) => (
-      <div>
-        <div className="font-medium">{value}</div>
-        <div className="text-sm text-muted-foreground">{row.client}</div>
-      </div>
-    ),
+  // Extract data from paginated responses
+  const invoices = invoicesData?.results || [];
+  const payments = paymentsData?.results || [];
+  const expenses = expensesData?.results || [];
+
+  // Mock data for reports (to be replaced with actual API calls)
+  const financialSummary: FinancialSummary = {
+    total_revenue: invoices.reduce((sum, inv) => sum + inv.total_amount, 0),
+    total_expenses: expenses.reduce((sum, exp) => sum + exp.amount, 0),
+    net_profit: invoices.reduce((sum, inv) => sum + inv.total_amount, 0) - expenses.reduce((sum, exp) => sum + exp.amount, 0),
+    outstanding_invoices: invoices.filter(inv => inv.status !== 'PAID').length,
+    overdue_invoices: invoices.filter(inv => inv.status === 'OVERDUE').length,
+    monthly_revenue: 0,
+    monthly_expenses: 0,
+    profit_margin: 0,
+    average_invoice_amount: 0,
+    payment_collection_rate: 0,
+  };
+
+  const revenueReport: RevenueReport = {
+    period: 'monthly',
+    total_revenue: invoices.reduce((sum, inv) => sum + inv.total_amount, 0),
+    invoice_count: invoices.length,
+    paid_invoices: invoices.filter(inv => inv.status === 'PAID').length,
+    outstanding_amount: invoices.filter(inv => inv.status !== 'PAID').reduce((sum, inv) => sum + inv.total_amount, 0),
+    breakdown: [],
+  };
+
+  const expenseReport: ExpenseReport = {
+    period: 'monthly',
+    total_expenses: expenses.reduce((sum, exp) => sum + exp.amount, 0),
+    expense_count: expenses.length,
+    breakdown: [],
+  };
+
+  const isLoading = invoicesLoading || paymentsLoading || expensesLoading;
+
+  // Invoice columns
+  const invoiceColumns = [
+    {
+      key: "invoice_number",
+      label: "Invoice #",
+      render: (row: Invoice) => (
+        <div>
+          <div className="font-medium">{row.invoice_number}</div>
+          <div className="text-sm text-muted-foreground">{row.customer_name}</div>
+        </div>
+      ),
+    },
+    {
+      key: "issue_date",
+      label: "Issue Date",
+      render: (row: Invoice) => new Date(row.issue_date).toLocaleDateString(),
+    },
+    {
+      key: "due_date",
+      label: "Due Date",
+      render: (row: Invoice) => new Date(row.due_date).toLocaleDateString(),
+    },
+    {
+      key: "total_amount",
+      label: "Amount",
+      render: (row: Invoice) => `$${row.total_amount.toFixed(2)}`,
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (row: Invoice) => (
+        <Badge variant={
+          row.status === 'PAID' ? 'default' :
+          row.status === 'SENT' ? 'secondary' :
+          row.status === 'OVERDUE' ? 'destructive' :
+          row.status === 'CANCELLED' ? 'outline' : 'secondary'
+        }>
+          {row.status}
+        </Badge>
+      ),
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (row: Invoice) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedInvoice(row);
+              setIsInvoiceDetailsOpen(true);
+            }}
+          >
+            <FileText className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSelectedInvoice(row);
+              setIsInvoiceFormOpen(true);
+            }}
+          >
+            <CheckCircle className="h-4 w-4" />
+          </Button>
+          {row.status !== 'PAID' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedInvoice(row);
+                setIsPaymentFormOpen(true);
+              }}
+            >
+              <CreditCard className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  // Payment columns
+  const paymentColumns = [
+    {
+      key: "invoice",
+      label: "Invoice",
+      render: (row: Payment) => `#${row.invoice}`,
   },
   {
     key: "amount",
     label: "Amount",
-    sortable: true,
-    render: (value) => `$${value.toFixed(2)}`,
-  },
-  {
-    key: "dueDate",
-    label: "Due Date",
-    sortable: true,
-    render: (value) => new Date(value).toLocaleDateString(),
-  },
-  {
-    key: "status",
-    label: "Status",
-    render: (value) => (
-      <Badge
-        variant={
-          value === "Paid"
-            ? "default"
-            : value === "Pending"
-            ? "secondary"
-            : value === "Overdue"
-            ? "destructive"
-            : "outline"
-        }
-      >
-        {value}
+      render: (row: Payment) => `$${row.amount.toFixed(2)}`,
+    },
+    {
+      key: "payment_date",
+      label: "Payment Date",
+      render: (row: Payment) => new Date(row.payment_date).toLocaleDateString(),
+    },
+    {
+      key: "payment_method",
+      label: "Method",
+      render: (row: Payment) => (
+        <Badge variant="outline">
+          {row.payment_method.replace('_', ' ')}
       </Badge>
     ),
+    },
+    {
+      key: "reference_number",
+      label: "Reference",
   },
 ];
 
-const expenseColumns: Column[] = [
+  // Expense columns
+  const expenseColumns = [
   {
     key: "description",
     label: "Description",
-    sortable: true,
   },
   {
     key: "category",
     label: "Category",
-    sortable: true,
+      render: (row: Expense) => (
+        <Badge variant="outline">
+          {row.category}
+        </Badge>
+      ),
   },
   {
     key: "amount",
     label: "Amount",
-    sortable: true,
-    render: (value) => `$${value.toFixed(2)}`,
+      render: (row: Expense) => `$${row.amount.toFixed(2)}`,
   },
   {
-    key: "date",
+      key: "expense_date",
     label: "Date",
-    sortable: true,
-    render: (value) => new Date(value).toLocaleDateString(),
+      render: (row: Expense) => new Date(row.expense_date).toLocaleDateString(),
   },
   {
     key: "vendor",
     label: "Vendor",
   },
   {
-    key: "status",
-    label: "Status",
-    render: (value) => (
-      <Badge variant={value === "Approved" ? "default" : "secondary"}>
-        {value}
+    key: "is_billable",
+      label: "Billable",
+      render: (row: Expense) => (
+        <Badge variant={row.is_billable ? 'default' : 'secondary'}>
+          {row.is_billable ? 'Yes' : 'No'}
       </Badge>
+    ),
+  },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (row: Expense) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              // Handle view expense
+              console.log("View expense:", row.id);
+            }}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        </div>
     ),
   },
 ];
 
-export default function FinanceManagement() {
-  const [isInvoiceDialogOpen, setIsInvoiceDialogOpen] = useState(false);
-  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
-
-  // Calculate financial stats
-  const totalRevenue = invoiceData.filter(inv => inv.status === "Paid").reduce((sum, inv) => sum + inv.amount, 0);
-  const pendingAmount = invoiceData.filter(inv => inv.status === "Pending").reduce((sum, inv) => sum + inv.amount, 0);
-  const overdueAmount = invoiceData.filter(inv => inv.status === "Overdue").reduce((sum, inv) => sum + inv.amount, 0);
-  const totalExpenses = expenseData.reduce((sum, exp) => sum + exp.amount, 0);
-
-  const handleView = (item: any) => {
-    console.log("View item:", item);
+  const handleFormSuccess = () => {
+    setIsInvoiceFormOpen(false);
+    setIsPaymentFormOpen(false);
+    setIsExpenseFormOpen(false);
+    setSelectedInvoice(null);
+    // Data will be automatically refetched by React Query
   };
 
-  const handleEdit = (item: any) => {
-    console.log("Edit item:", item);
-  };
-
-  const handleDelete = (item: any) => {
-    console.log("Delete item:", item);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading financial data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Finance & Invoicing</h1>
+          <h1 className="text-3xl font-bold text-foreground">Finance Management</h1>
           <p className="text-muted-foreground">
-            Manage invoices, payments, and business finances
+            Manage invoices, payments, expenses, and financial reporting
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            Financial Report
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setIsReportsModalOpen(true)}>
+            <Download className="mr-2 h-4 w-4" />
+            Reports
           </Button>
-          <Dialog open={isInvoiceDialogOpen} onOpenChange={setIsInvoiceDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="btn-enterprise">
-                <Plus className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm">
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
+          {activeTab === "invoices" && (
+            <Button size="sm" onClick={() => setIsInvoiceFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
                 Create Invoice
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Create New Invoice</DialogTitle>
-                <DialogDescription>
-                  Generate a new invoice for your cleaning services.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="client">Client</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select client" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="abc-corp">ABC Corporation</SelectItem>
-                        <SelectItem value="restaurant">Downtown Restaurant</SelectItem>
-                        <SelectItem value="johnson">Johnson Family</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dueDate">Due Date</Label>
-                    <Input id="dueDate" type="date" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="services">Services</Label>
-                  <Textarea id="services" placeholder="List the services provided" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Amount</Label>
-                    <Input id="amount" type="number" step="0.01" placeholder="0.00" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="tax">Tax (%)</Label>
-                    <Input id="tax" type="number" placeholder="0" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea id="notes" placeholder="Additional notes or terms" />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsInvoiceDialogOpen(false)}>
-                  Cancel
+          )}
+          {activeTab === "payments" && (
+            <Button size="sm" onClick={() => setIsPaymentFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Record Payment
                 </Button>
-                <Button onClick={() => setIsInvoiceDialogOpen(false)}>
-                  Create Invoice
+          )}
+          {activeTab === "expenses" && (
+            <Button size="sm" onClick={() => setIsExpenseFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Expense
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          )}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-success/10 rounded-lg">
-              <DollarSign className="h-5 w-5 text-success" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Revenue</p>
-              <p className="text-2xl font-bold">${totalRevenue.toFixed(0)}</p>
-            </div>
-          </div>
+      {/* Financial Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${financialSummary?.total_revenue?.toLocaleString() || 0}</div>
+            <p className="text-xs text-muted-foreground">All time revenue</p>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-warning/10 rounded-lg">
-              <Clock className="h-5 w-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Pending Payments</p>
-              <p className="text-2xl font-bold">${pendingAmount.toFixed(0)}</p>
-            </div>
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Outstanding</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${financialSummary?.outstanding_invoices?.toLocaleString() || 0}</div>
+            <p className="text-xs text-muted-foreground">Pending payments</p>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-destructive/10 rounded-lg">
-              <XCircle className="h-5 w-5 text-destructive" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Overdue</p>
-              <p className="text-2xl font-bold">${overdueAmount.toFixed(0)}</p>
-            </div>
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Overdue</CardTitle>
+            <XCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${financialSummary?.overdue_invoices?.toLocaleString() || 0}</div>
+            <p className="text-xs text-muted-foreground">Overdue invoices</p>
+          </CardContent>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <FileText className="h-5 w-5 text-primary" />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${financialSummary?.net_profit?.toLocaleString() || 0}</div>
+            <p className="text-xs text-muted-foreground">{financialSummary?.profit_margin?.toFixed(1) || 0}% margin</p>
+          </CardContent>
+        </Card>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Expenses</p>
-              <p className="text-2xl font-bold">${totalExpenses.toFixed(0)}</p>
-            </div>
-          </div>
+
+      {/* Monthly Overview */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+            <TrendingUp className="h-4 w-4 text-success" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${financialSummary?.monthly_revenue?.toLocaleString() || 0}</div>
+            <p className="text-xs text-muted-foreground">This month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+            <TrendingDown className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${financialSummary?.monthly_expenses?.toLocaleString() || 0}</div>
+            <p className="text-xs text-muted-foreground">This month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Collection Rate</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{financialSummary?.payment_collection_rate?.toFixed(1) || 0}%</div>
+            <p className="text-xs text-muted-foreground">Payment collection</p>
+          </CardContent>
         </Card>
       </div>
 
-      {/* Tabs for Invoices and Expenses */}
-      <Tabs defaultValue="invoices" className="space-y-4">
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="invoices">
+        <TabsContent value="invoices" className="space-y-4">
+          {/* Filters */}
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search invoices..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button variant="outline" size="sm">
+              <Filter className="mr-2 h-4 w-4" />
+              Filter
+            </Button>
+          </div>
+
+          {/* Invoices Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Invoice Management</CardTitle>
+              <CardTitle>Invoices</CardTitle>
             </CardHeader>
             <CardContent>
-              <DataTable
-                data={invoiceData}
-                columns={invoiceColumns}
-                onView={handleView}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                searchable
-                filterable
-              />
+              <DataTable data={invoices || []} columns={invoiceColumns} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payments" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataTable data={payments || []} columns={paymentColumns} />
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="expenses">
+        <TabsContent value="expenses" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader>
               <CardTitle>Expense Tracking</CardTitle>
-              <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Expense
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Expense</DialogTitle>
-                    <DialogDescription>
-                      Record a new business expense.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="expenseDesc">Description</Label>
-                      <Input id="expenseDesc" placeholder="What was this expense for?" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="expenseCategory">Category</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="supplies">Supplies</SelectItem>
-                            <SelectItem value="transportation">Transportation</SelectItem>
-                            <SelectItem value="maintenance">Maintenance</SelectItem>
-                            <SelectItem value="marketing">Marketing</SelectItem>
-                            <SelectItem value="office">Office</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="expenseAmount">Amount</Label>
-                        <Input id="expenseAmount" type="number" step="0.01" placeholder="0.00" />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="expenseDate">Date</Label>
-                        <Input id="expenseDate" type="date" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="vendor">Vendor</Label>
-                        <Input id="vendor" placeholder="Who did you pay?" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setIsExpenseDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={() => setIsExpenseDialogOpen(false)}>
-                      Add Expense
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
             </CardHeader>
             <CardContent>
-              <DataTable
-                data={expenseData}
-                columns={expenseColumns}
-                onView={handleView}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                searchable
-                filterable
-              />
+              <DataTable data={expenses || []} columns={expenseColumns} />
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Forms */}
+      {/* Forms are handled by modals - these components are for direct form usage */}
+      {/* <InvoiceForm
+        invoice={selectedInvoice}
+        customers={[]}
+        onSubmit={handleFormSuccess}
+      />
+
+      <PaymentForm
+        invoice={selectedInvoice}
+        onSubmit={handleFormSuccess}
+      />
+
+      <ExpenseForm
+        onSubmit={handleFormSuccess}
+      /> */}
+
+      {/* <InvoiceDetailsModal
+        open={isInvoiceDetailsOpen}
+        onOpenChange={setIsInvoiceDetailsOpen}
+        invoice={selectedInvoice}
+      /> */}
+
+      <FinancialReportsModal
+        open={isReportsModalOpen}
+        onOpenChange={setIsReportsModalOpen}
+        revenueReport={revenueReport}
+        expenseReport={expenseReport}
+      />
     </div>
   );
 }
