@@ -81,7 +81,7 @@ export function ServicesSection() {
     },
     {
       title: "White-Label Solutions",
-      description: "Rebrand iNEAT-ERP as your own solution.",
+      description: "Rebrand TidyGen as your own solution.",
       icon: <CheckCircle className="h-5 w-5" />
     }
   ];
@@ -95,7 +95,7 @@ export function ServicesSection() {
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Beyond software, we provide comprehensive enterprise services including 
-            customization, training, and SLA support to ensure your success with iNEAT-ERP.
+            customization, training, and SLA support to ensure your success with TidyGen.
           </p>
         </div>
 

@@ -15,7 +15,7 @@ export default function SubscriptionCancelled() {
   };
 
   const handleContactSupport = () => {
-    window.open('mailto:support@ineat-erp.com?subject=Subscription Support', '_blank');
+    window.open('mailto:support@tidygen.com?subject=Subscription Support', '_blank');
   };
 
   return (
@@ -46,7 +46,7 @@ export default function SubscriptionCancelled() {
 
             {/* Benefits Reminder */}
             <div className="bg-muted/30 rounded-lg p-4 space-y-2">
-              <h4 className="font-medium text-sm">Remember, with iNEAT-ERP you get:</h4>
+              <h4 className="font-medium text-sm">Remember, with TidyGen you get:</h4>
               <ul className="text-xs text-muted-foreground space-y-1">
                 <li>• Complete business management solution</li>
                 <li>• Advanced analytics and reporting</li>
@@ -97,7 +97,7 @@ export default function SubscriptionCancelled() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => window.open('https://github.com/ineat/ineat-erp', '_blank')}
+                onClick={() => window.open('https://github.com/tidygen/tidygen', '_blank')}
                 className="w-full"
               >
                 Download Community Edition

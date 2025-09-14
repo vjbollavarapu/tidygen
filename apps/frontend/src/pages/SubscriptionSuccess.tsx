@@ -74,7 +74,7 @@ export default function SubscriptionSuccess() {
             </div>
             <CardTitle className="text-2xl">Subscription Successful!</CardTitle>
             <p className="text-muted-foreground">
-              Welcome to iNEAT-ERP! Your subscription has been activated.
+              Welcome to TidyGen! Your subscription has been activated.
             </p>
           </CardHeader>
 
@@ -155,8 +155,8 @@ export default function SubscriptionSuccess() {
               <p>Need help getting started?</p>
               <p>
                 Contact our support team at{' '}
-                <a href="mailto:support@ineat-erp.com" className="text-primary hover:underline">
-                  support@ineat-erp.com
+                <a href="mailto:support@tidygen.com" className="text-primary hover:underline">
+                  support@tidygen.com
                 </a>
               </p>
             </div>

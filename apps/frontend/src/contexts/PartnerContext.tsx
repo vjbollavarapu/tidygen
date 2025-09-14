@@ -34,7 +34,7 @@ export interface PartnerBranding {
   support_phone?: string;
   custom_domain?: string;
   custom_css?: string;
-  remove_ineat_branding: boolean;
+  remove_tidygen_branding: boolean;
   footer_text?: string;
   privacy_policy_url?: string;
   terms_of_service_url?: string;
@@ -460,7 +460,7 @@ export function PartnerProvider({ children }: PartnerProviderProps) {
       secondary_color: '#64748B',
       company_name: '',
       support_email: '',
-      remove_ineat_branding: false,
+      remove_tidygen_branding: false,
     };
   };
   

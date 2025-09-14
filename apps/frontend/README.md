@@ -1,4 +1,4 @@
-# iNEAT-ERP: Intelligent Enterprise Resource Planning
+# TidyGen ERP: Intelligent Enterprise Resource Planning
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -9,7 +9,7 @@ A comprehensive, multi-tenant ERP solution with Web3 integration, designed for m
 
 ## 🚀 Overview
 
-iNEAT-ERP is a full-stack enterprise resource planning system that combines traditional business management with cutting-edge Web3 technologies. It offers both Community and Commercial editions to serve different market needs.
+TidyGen ERP is a full-stack enterprise resource planning system that combines traditional business management with cutting-edge Web3 technologies. It offers both Community and Commercial editions to serve different market needs.
 
 ### Key Features
 
@@ -87,8 +87,8 @@ iNEAT-ERP is a full-stack enterprise resource planning system that combines trad
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-org/ineat-erp.git
-   cd ineat-erp
+   git clone https://github.com/your-org/tidygen-erp.git
+   cd tidygen-erp
    ```
 
 2. **Run the installer**
@@ -124,7 +124,7 @@ iNEAT-ERP is a full-stack enterprise resource planning system that combines trad
 ## 📁 Project Structure
 
 ```
-ineat-erp/
+tidygen-erp/
 ├── apps/
 │   ├── frontend/                 # React frontend
 │   │   ├── src/
@@ -137,7 +137,7 @@ ineat-erp/
 │   │   ├── public/              # Static assets
 │   │   └── package.json
 │   └── backend/                 # Django backend
-│       ├── ineat_erp/          # Main Django project
+│       ├── backend/            # Main Django project
 │       ├── apps/               # Django applications
 │       │   ├── core/           # Core functionality
 │       │   ├── accounts/       # User management
@@ -330,12 +330,12 @@ See [LICENSE](LICENSE) for details.
 ## 🆘 Support
 
 ### Community Support
-- GitHub Issues: [Report bugs and request features](https://github.com/your-org/ineat-erp/issues)
+- GitHub Issues: [Report bugs and request features](https://github.com/your-org/tidygen-erp/issues)
 - Discord: [Join our community](https://discord.gg/your-discord)
-- Documentation: [Read the docs](https://docs.ineat-erp.com)
+- Documentation: [Read the docs](https://docs.tidygen.com)
 
 ### Commercial Support
-- Email: support@ineat-erp.com
+- Email: support@tidygen.com
 - Phone: +1 (555) 123-4567
 - Priority support for Enterprise customers
 
@@ -359,10 +359,10 @@ See our [Roadmap](docs/roadmap.md) for upcoming features and Web3 Foundation gra
 
 ## 📞 Contact
 
-- **Website**: https://ineat-erp.com
-- **Email**: info@ineat-erp.com
-- **Twitter**: [@ineat_erp](https://twitter.com/ineat_erp)
-- **LinkedIn**: [iNEAT-ERP](https://linkedin.com/company/ineat-erp)
+- **Website**: https://tidygen.com
+- **Email**: info@tidygen.com
+- **Twitter**: [@tidygen_erp](https://twitter.com/tidygen_erp)
+- **LinkedIn**: [TidyGen ERP](https://linkedin.com/company/tidygen-erp)
 
 ---
 

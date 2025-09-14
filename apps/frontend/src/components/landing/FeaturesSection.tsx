@@ -219,7 +219,7 @@ export function FeaturesSection() {
           <div className="space-y-6">
             <h3 className="text-2xl font-bold">Ready to Accelerate Your Business Growth?</h3>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Join 500+ active partners using iNEAT-ERP to scale operations, 
+              Join 500+ active partners using TidyGen to scale operations, 
               expand market reach, and increase revenue through white-label solutions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

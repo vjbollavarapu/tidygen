@@ -1,8 +1,8 @@
-# iNEAT ERP Product Roadmap
+# TidyGen ERP Product Roadmap
 
 ## 🎯 Executive Summary
 
-This roadmap outlines the **12-month product development strategy** for iNEAT ERP, a Web3-enabled Enterprise Resource Planning platform. The roadmap focuses on delivering core ERP functionality with integrated blockchain capabilities, targeting enterprise customers who need modern, secure, and scalable business management solutions.
+This roadmap outlines the **12-month product development strategy** for TidyGen ERP, a Web3-enabled Enterprise Resource Planning platform. The roadmap focuses on delivering core ERP functionality with integrated blockchain capabilities, targeting enterprise customers who need modern, secure, and scalable business management solutions.
 
 > 📅 **Timeline**: January 2024 - December 2024  
 > 🎯 **Goal**: Production-ready Web3-enabled ERP platform with comprehensive business modules
@@ -428,9 +428,9 @@ This roadmap outlines the **12-month product development strategy** for iNEAT ER
 
 ---
 
-> 📝 **Note**: This roadmap is a living document updated quarterly based on user feedback, market conditions, and technological advancements. The iNEAT team is committed to delivering a world-class Web3-enabled ERP platform that meets the evolving needs of modern businesses.
+> 📝 **Note**: This roadmap is a living document updated quarterly based on user feedback, market conditions, and technological advancements. The TidyGen team is committed to delivering a world-class Web3-enabled ERP platform that meets the evolving needs of modern businesses.
 
 **Last Updated**: January 2024  
 **Next Review**: April 2024  
-**Product Owner**: iNEAT Product Team  
+**Product Owner**: TidyGen Product Team  
 **Stakeholders**: Engineering, Design, Marketing, Sales, Customer Success

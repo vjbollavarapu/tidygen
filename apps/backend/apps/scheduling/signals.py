@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
+from apps.core.email_service import send_custom_notification
 
 from apps.core.models import User
 from apps.organizations.models import Organization
@@ -319,10 +320,7 @@ def send_notification(notification):
 
 
 def send_email_notification(notification):
-    """Send email notification."""
-    subject = notification.subject
-    message = notification.message
-    
+    """Send email notification using TidyGen email service."""
     # Get recipient emails
     recipient_emails = []
     for recipient in notification.recipients.all():
@@ -330,13 +328,14 @@ def send_email_notification(notification):
             recipient_emails.append(recipient.email)
     
     if recipient_emails:
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            recipient_emails,
-            fail_silently=False
-        )
+        # Use TidyGen email service for consistent branding
+        for email in recipient_emails:
+            send_custom_notification(
+                recipient_email=email,
+                subject=notification.subject,
+                message=notification.message,
+                notification_type='scheduling'
+            )
 
 
 def send_sms_notification(notification):

@@ -1,0 +1,151 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: tidygen_db_staging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tidygen_erp_staging}
+      POSTGRES_USER: ${POSTGRES_USER:-tidygen_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tidygen_user} -d ${POSTGRES_DB:-tidygen_erp_staging}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tidygen-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: tidygen_redis_staging
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tidygen-network
+
+  # Django Backend
+  backend:
+    image: ghcr.io/vcsmy/tidygen-erp/tidygen-backend:develop
+    container_name: tidygen_backend_staging
+    environment:
+      - DJANGO_ENV=staging
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-tidygen_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-tidygen_erp_staging}
+      - REDIS_URL=redis://redis:6379/1
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-staging.tidygen.com}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://staging.tidygen.com}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-https://staging.tidygen.com}
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-noreply@staging.tidygen.com}
+      - FRONTEND_URL=${FRONTEND_URL:-https://staging.tidygen.com}
+      - WEB3_MESSAGE_PREFIX=TidyGen ERP Login
+      - WEB3_PROVIDER_URL=${WEB3_PROVIDER_URL}
+      - WEB3_NETWORK_ID=${WEB3_NETWORK_ID:-5}
+    volumes:
+      - backend_media:/app/media
+      - backend_static:/app/staticfiles
+      - backend_logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - tidygen-network
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120"
+
+  # Celery Worker
+  celery:
+    image: ghcr.io/vcsmy/tidygen-erp/tidygen-backend:develop
+    container_name: tidygen_celery_staging
+    environment:
+      - DJANGO_ENV=staging
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-tidygen_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-tidygen_erp_staging}
+      - REDIS_URL=redis://redis:6379/1
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - backend_media:/app/media
+      - backend_logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - tidygen-network
+    command: celery -A backend worker --loglevel=info --concurrency=1
+
+  # Celery Beat Scheduler
+  celery-beat:
+    image: ghcr.io/vcsmy/tidygen-erp/tidygen-backend:develop
+    container_name: tidygen_celery_beat_staging
+    environment:
+      - DJANGO_ENV=staging
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-tidygen_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-tidygen_erp_staging}
+      - REDIS_URL=redis://redis:6379/1
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - backend_logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - tidygen-network
+    command: celery -A backend beat --loglevel=info
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: tidygen_nginx_staging
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.staging.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - backend_static:/var/www/static
+      - backend_media:/var/www/media
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - tidygen-network
+
+networks:
+  tidygen-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_media:
+  backend_static:
+  backend_logs:

@@ -416,10 +416,10 @@ export default function PartnerSettings() {
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="remove-branding"
-                      checked={brandingData.remove_ineat_branding}
-                      onCheckedChange={(checked) => setBrandingData(prev => ({ ...prev, remove_ineat_branding: checked }))}
+                      checked={brandingData.remove_tidygen_branding}
+                      onCheckedChange={(checked) => setBrandingData(prev => ({ ...prev, remove_tidygen_branding: checked }))}
                     />
-                    <Label htmlFor="remove-branding">Remove iNEAT-ERP Branding</Label>
+                    <Label htmlFor="remove-branding">Remove TidyGen Branding</Label>
                   </div>
                   
                   <div className="flex justify-end">

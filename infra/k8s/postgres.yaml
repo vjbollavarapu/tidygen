@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tidygen-postgres-pvc
+  namespace: tidygen-erp
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tidygen-postgres
+  namespace: tidygen-erp
+  labels:
+    app: tidygen-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tidygen-postgres
+  template:
+    metadata:
+      labels:
+        app: tidygen-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "tidygen_erp"
+        - name: POSTGRES_USER
+          value: "tidygen_user"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tidygen-backend-secrets
+              key: POSTGRES_PASSWORD
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - tidygen_user
+            - -d
+            - tidygen_erp
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - tidygen_user
+            - -d
+            - tidygen_erp
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: tidygen-postgres-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tidygen-postgres
+  namespace: tidygen-erp
+  labels:
+    app: tidygen-postgres
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: tidygen-postgres

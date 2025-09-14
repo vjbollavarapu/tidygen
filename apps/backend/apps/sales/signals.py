@@ -248,7 +248,7 @@ def create_welcome_interaction(sender, instance, created, **kwargs):
         ClientInteraction.objects.create(
             client=instance,
             interaction_type='other',
-            subject='Welcome to our services',
+            subject='Welcome to TidyGen ERP Services',
             description=f'New {instance.client_type} client added to the system.',
             initiated_by=instance.created_by,
             outcome='Client onboarded successfully'

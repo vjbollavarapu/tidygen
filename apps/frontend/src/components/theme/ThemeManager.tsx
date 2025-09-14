@@ -253,7 +253,7 @@ export default function ThemeManager() {
                     checked={whiteLabelSettings?.removeBranding || false}
                     onCheckedChange={toggleBranding}
                   />
-                  <Label htmlFor="remove-branding">Remove iNEAT-ERP Branding</Label>
+                  <Label htmlFor="remove-branding">Remove TidyGen Branding</Label>
                 </div>
               </div>
             </div>

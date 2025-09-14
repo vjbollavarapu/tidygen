@@ -123,7 +123,7 @@ export interface WhiteLabelSettings {
 const defaultTheme: CustomTheme = {
   id: 'default',
   name: 'Default Theme',
-  description: 'Standard iNEAT-ERP theme',
+  description: 'Standard TidyGen theme',
   colors: {
     primary: 'hsl(221.2 83.2% 53.3%)',
     secondary: 'hsl(210 40% 98%)',

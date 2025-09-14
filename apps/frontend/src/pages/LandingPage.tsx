@@ -67,7 +67,7 @@ export default function LandingPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <Building2 className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold">iNEAT-ERP</span>
+              <span className="text-xl font-bold">TidyGen</span>
             </div>
             
             <div className="hidden md:flex items-center space-x-8">

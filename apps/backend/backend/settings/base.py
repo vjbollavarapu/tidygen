@@ -383,3 +383,6 @@ TENANT_DOMAIN_MODEL = 'organizations.Domain'
 WEB3_PROVIDER_URL = config('WEB3_PROVIDER_URL', default='https://goerli.infura.io/v3/YOUR_INFURA_KEY')
 WEB3_PRIVATE_KEY = config('WEB3_PRIVATE_KEY', default='')
 WEB3_NETWORK_ID = config('WEB3_NETWORK_ID', default=5, cast=int)  # Goerli testnet
+
+# Frontend Configuration
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')

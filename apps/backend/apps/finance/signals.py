@@ -12,6 +12,7 @@ from apps.finance.models import (
     Invoice, InvoiceItem, Payment, Expense, Budget, BudgetItem,
     RecurringInvoice, RecurringInvoiceItem, Account
 )
+from apps.core.email_service import send_invoice_email, send_custom_notification
 
 
 @receiver(post_save, sender=InvoiceItem)
@@ -76,6 +77,14 @@ def update_invoice_paid_amount(sender, instance, created, **kwargs):
         if total_paid >= invoice.total_amount and invoice.status in ['sent', 'viewed']:
             invoice.status = 'paid'
             invoice.paid_date = timezone.now().date()
+            
+            # Send payment confirmation email
+            send_custom_notification(
+                recipient_email=invoice.customer.email,
+                subject=f"Payment Received - Invoice #{invoice.invoice_number}",
+                message=f"Thank you for your payment of ${instance.amount} for Invoice #{invoice.invoice_number}. Your invoice has been marked as paid.",
+                notification_type='payment_confirmation'
+            )
         
         # Save without triggering signals again
         Invoice.objects.filter(pk=invoice.pk).update(
@@ -213,6 +222,26 @@ def set_invoice_due_date(sender, instance, **kwargs):
         # Set due date based on customer payment terms
         payment_terms = instance.customer.payment_terms or 30
         instance.due_date = instance.issue_date + timedelta(days=payment_terms)
+
+
+@receiver(post_save, sender=Invoice)
+def send_invoice_notification(sender, instance, created, **kwargs):
+    """Send invoice notification when invoice is sent."""
+    if not created and instance.status == 'sent':
+        # Send invoice email to customer
+        invoice_data = {
+            'invoice_number': instance.invoice_number,
+            'invoice_amount': f"${instance.total_amount:,.2f}",
+            'due_date': instance.due_date.strftime('%B %d, %Y'),
+            'invoice_description': instance.notes or f"Invoice for services provided on {instance.issue_date.strftime('%B %d, %Y')}",
+            'invoice_url': f"https://app.tidygen.com/invoices/{instance.id}/view"
+        }
+        
+        send_invoice_email(
+            client_email=instance.customer.email,
+            client_name=instance.customer.name,
+            invoice_data=invoice_data
+        )
 
 
 @receiver(pre_save, sender=Expense)

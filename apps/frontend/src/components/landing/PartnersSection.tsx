@@ -24,7 +24,7 @@ export function PartnersSection() {
     {
       icon: <Building2 className="h-6 w-6" />,
       title: "White-Label Options",
-      description: "Rebrand iNEAT-ERP as your own solution with custom branding."
+      description: "Rebrand TidyGen as your own solution with custom branding."
     },
     {
       icon: <Users className="h-6 w-6" />,
@@ -87,19 +87,19 @@ export function PartnersSection() {
       company: "CleanTech Solutions",
       type: "Software Partner",
       result: "Generated $500K+ in revenue",
-      quote: "iNEAT-ERP's partner program has been instrumental in our growth. The multi-tenant capabilities and white-label options are exceptional."
+      quote: "TidyGen's partner program has been instrumental in our growth. The multi-tenant capabilities and white-label options are exceptional."
     },
     {
       company: "ProClean Consulting",
       type: "Reseller",
       result: "200+ successful implementations",
-      quote: "The comprehensive training and marketing materials made it easy to sell and implement iNEAT-ERP for our clients."
+      quote: "The comprehensive training and marketing materials made it easy to sell and implement TidyGen for our clients."
     },
     {
       company: "Enterprise Systems Inc",
       type: "Enterprise Partner",
       result: "Expanded to 5 new markets",
-      quote: "The partnership with iNEAT-ERP has opened new opportunities and helped us establish a strong presence in the cleaning industry."
+      quote: "The partnership with TidyGen has opened new opportunities and helped us establish a strong presence in the cleaning industry."
     }
   ];
 
@@ -108,7 +108,7 @@ export function PartnersSection() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl lg:text-4xl font-bold">
-            Partner with iNEAT-ERP
+            Partner with TidyGen
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Join our partner ecosystem and help enterprises worldwide 

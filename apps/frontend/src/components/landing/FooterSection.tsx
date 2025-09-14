@@ -89,7 +89,7 @@ export function FooterSection() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                   <Building2 className="h-5 w-5 text-primary-foreground" />
                 </div>
-                <span className="text-xl font-bold">iNEAT-ERP</span>
+                <span className="text-xl font-bold">TidyGen</span>
               </div>
               <p className="text-sm text-muted-foreground max-w-xs">
                 Enterprise-grade multi-tenant ERP platform for businesses, dealers, and resellers. 
@@ -188,7 +188,7 @@ export function FooterSection() {
               <Mail className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Email</p>
-                <p className="text-sm text-muted-foreground">support@ineat-erp.com</p>
+                <p className="text-sm text-muted-foreground">support@tidygen.com</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -212,12 +212,12 @@ export function FooterSection() {
         <div className="py-6 border-t">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-muted-foreground">
-              © 2024 iNEAT-ERP. All rights reserved.
+              © 2024 TidyGen. All rights reserved.
             </div>
             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
               <span>Enterprise-grade ERP solution</span>
               <a
-                href="https://github.com/ineat/ineat-erp-community"
+                href="https://github.com/tidygen/tidygen-community"
                 className="flex items-center space-x-1 hover:text-foreground transition-colors"
                 target="_blank"
                 rel="noopener noreferrer"

@@ -9,8 +9,8 @@ I’ll give you a **step-by-step plan** plus **Cursor.AI prompt set** to transfo
 
 # 🛠️ Step 1 — Prepare the Repo Split
 
-* Clone your current repo `ineat-erp`.
-* Create a new repo: `ineat-erp-community`.
+* Clone your current repo `tidygen-erp`.
+* Create a new repo: `tidygen-erp-community`.
 * Push an initial branch `community-base` there.
 * This will be the branch Cursor.AI works on to simplify.
 
@@ -23,7 +23,7 @@ I’ll give you a **step-by-step plan** plus **Cursor.AI prompt set** to transfo
 ### **Prompt C1 — Single Tenant Refactor**
 
 ```text
-We are creating a Community Edition of ineat-erp for grant submission.  
+We are creating a Community Edition of tidygen-erp for grant submission.  
 Refactor the codebase to remove all multi-tenant and partner portal logic.  
 
 Requirements:  
@@ -44,7 +44,7 @@ Deliverables:
 ### **Prompt C2 — Web3 Enhancements for Community Edition**
 
 ```text
-Add Web3 features to the Community Edition of ineat-erp for alignment with the Web3 Foundation grant.  
+Add Web3 features to the Community Edition of tidygen-erp for alignment with the Web3 Foundation grant.  
 
 Requirements:  
 - Add Decentralized Identity (DID login option) alongside normal login.  

@@ -56,10 +56,10 @@ export function AboutSection() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl lg:text-4xl font-bold">
-            Why Choose iNEAT-ERP?
+            Why Choose TidyGen?
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Built for enterprise scale, iNEAT-ERP combines innovation with security 
+            Built for enterprise scale, TidyGen combines innovation with security 
             to deliver a comprehensive multi-tenant solution that grows with your business.
           </p>
         </div>

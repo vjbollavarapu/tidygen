@@ -308,7 +308,7 @@ export function EnhancedComparisonSection({
           <div className="bg-card border rounded-lg p-8 max-w-2xl mx-auto">
             <h3 className="text-2xl font-bold mb-4">Ready to Get Started?</h3>
             <p className="text-muted-foreground mb-6">
-              Try our Enterprise demo or download the Community edition to see how iNEAT-ERP 
+              Try our Enterprise demo or download the Community edition to see how TidyGen 
               can transform your cleaning business.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -1,6 +1,6 @@
-# iNEAT ERP Frontend
+# TidyGen ERP Frontend
 
-A modern React + TypeScript frontend for the iNEAT ERP platform with Web3 integration.
+A modern React + TypeScript frontend for the TidyGen ERP platform with Web3 integration.
 
 ## 🚀 Features
 
@@ -273,4 +273,4 @@ The frontend integrates with the Django REST API:
 
 ## 📄 License
 
-This project is part of the iNEAT ERP platform and follows the same licensing terms.
+This project is part of the TidyGen ERP platform and follows the same licensing terms.

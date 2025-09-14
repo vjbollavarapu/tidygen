@@ -19,6 +19,7 @@ from .serializers import (
     UserLoginSerializer, PasswordChangeSerializer, PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer, EmailVerificationSerializer, UserSessionSerializer
 )
+from apps.core.email_service import send_welcome_email, send_password_reset_email
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -114,11 +115,14 @@ class UserRegistrationView(APIView):
                 expires_at=timezone.now() + timedelta(hours=24)
             )
             
-            # TODO: Send verification email
+            # Send verification email
+            verification_url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
+            email_sent = send_welcome_email(user, verification_url)
             
             return Response({
                 'message': 'User registered successfully. Please check your email for verification.',
-                'user': UserSerializer(user).data
+                'user': UserSerializer(user).data,
+                'email_sent': email_sent
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -201,10 +205,13 @@ class PasswordResetRequestView(APIView):
                 expires_at=timezone.now() + timedelta(hours=1)
             )
             
-            # TODO: Send reset email
+            # Send reset email
+            reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+            email_sent = send_password_reset_email(user, reset_url)
             
             return Response({
-                'message': 'Password reset email sent successfully.'
+                'message': 'Password reset email sent successfully.',
+                'email_sent': email_sent
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     

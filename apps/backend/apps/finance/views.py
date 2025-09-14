@@ -28,6 +28,7 @@ from apps.finance.filters import (
     ExpenseFilter, BudgetFilter, FinancialReportFilter, TaxRateFilter,
     RecurringInvoiceFilter, InvoiceAnalyticsFilter, ExpenseAnalyticsFilter
 )
+from apps.core.email_service import send_invoice_email
 
 
 class AccountViewSet(viewsets.ModelViewSet):
@@ -127,13 +128,32 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def send_invoice(self, request, pk=None):
-        """Mark invoice as sent."""
+        """Mark invoice as sent and send email notification."""
         invoice = self.get_object()
         if invoice.status == 'draft':
             invoice.status = 'sent'
             invoice.sent_date = timezone.now().date()
             invoice.save()
-            return Response({'status': 'Invoice sent successfully'})
+            
+            # Send invoice email to customer
+            invoice_data = {
+                'invoice_number': invoice.invoice_number,
+                'invoice_amount': f"${invoice.total_amount:,.2f}",
+                'due_date': invoice.due_date.strftime('%B %d, %Y'),
+                'invoice_description': invoice.notes or f"Invoice for services provided on {invoice.issue_date.strftime('%B %d, %Y')}",
+                'invoice_url': f"https://app.tidygen.com/invoices/{invoice.id}/view"
+            }
+            
+            email_sent = send_invoice_email(
+                client_email=invoice.customer.email,
+                client_name=invoice.customer.name,
+                invoice_data=invoice_data
+            )
+            
+            return Response({
+                'status': 'Invoice sent successfully',
+                'email_sent': email_sent
+            })
         return Response({'error': 'Invoice cannot be sent'}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['post'])

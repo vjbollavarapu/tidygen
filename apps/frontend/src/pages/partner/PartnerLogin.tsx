@@ -56,7 +56,7 @@ export default function PartnerLogin() {
             company_name: 'Tech Solutions Inc.',
             support_email: 'support@techsolutions.com',
             support_phone: '+1 (555) 123-4567',
-            remove_ineat_branding: true,
+            remove_tidygen_branding: true,
             footer_text: '© 2024 Tech Solutions Inc. All rights reserved.',
           },
           limits: {
@@ -210,7 +210,7 @@ export default function PartnerLogin() {
         <div className="flex items-center justify-center">
           <div className="w-full max-w-md space-y-6">
             <div className="text-center">
-              <h2 className="text-3xl font-bold mb-4">Partner with iNEAT-ERP</h2>
+              <h2 className="text-3xl font-bold mb-4">Partner with TidyGen</h2>
               <p className="text-lg text-muted-foreground">
                 Join our partner program and grow your business with our comprehensive ERP solution.
               </p>
