@@ -48,7 +48,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--organization',
             type=str,
-            default='iNEAT Corp',
+            default='TidyGen Corp',
             help='Organization name for the seed data',
         )
 
@@ -113,9 +113,9 @@ class Command(BaseCommand):
                 'description': f'{org_name} - Enterprise Resource Planning System',
                 'industry': 'Technology',
                 'size': 'medium',
-                'website': 'https://ineat-corp.com',
+                'website': 'https://tidygen-corp.com',
                 'phone': '+1-555-0123',
-                'email': 'info@ineat-corp.com',
+                'email': 'info@tidygen-corp.com',
                 'address': '123 Business Street',
                 'city': 'San Francisco',
                 'state': 'CA',
@@ -177,7 +177,7 @@ class Command(BaseCommand):
         admin_user, created = User.objects.get_or_create(
             username='admin',
             defaults={
-                'email': 'admin@ineat-corp.com',
+                'email': 'admin@tidygen-corp.com',
                 'first_name': 'Admin',
                 'last_name': 'User',
                 'is_staff': True,
@@ -201,13 +201,13 @@ class Command(BaseCommand):
 
         # Create other sample users
         users_data = [
-            ('john.doe', 'john.doe@ineat-corp.com', 'John', 'Doe', 'finance', 'Finance Manager'),
-            ('jane.smith', 'jane.smith@ineat-corp.com', 'Jane', 'Smith', 'inventory', 'Inventory Manager'),
-            ('mike.johnson', 'mike.johnson@ineat-corp.com', 'Mike', 'Johnson', 'hr', 'HR Manager'),
-            ('sarah.wilson', 'sarah.wilson@ineat-corp.com', 'Sarah', 'Wilson', 'projects', 'Project Manager'),
-            ('david.brown', 'david.brown@ineat-corp.com', 'David', 'Brown', 'sales', 'Sales Manager'),
-            ('lisa.davis', 'lisa.davis@ineat-corp.com', 'Lisa', 'Davis', 'purchasing', 'Purchasing Manager'),
-            ('alex.garcia', 'alex.garcia@ineat-corp.com', 'Alex', 'Garcia', 'web3', 'Web3 Manager'),
+            ('john.doe', 'john.doe@tidygen-corp.com', 'John', 'Doe', 'finance', 'Finance Manager'),
+            ('jane.smith', 'jane.smith@tidygen-corp.com', 'Jane', 'Smith', 'inventory', 'Inventory Manager'),
+            ('mike.johnson', 'mike.johnson@tidygen-corp.com', 'Mike', 'Johnson', 'hr', 'HR Manager'),
+            ('sarah.wilson', 'sarah.wilson@tidygen-corp.com', 'Sarah', 'Wilson', 'projects', 'Project Manager'),
+            ('david.brown', 'david.brown@tidygen-corp.com', 'David', 'Brown', 'sales', 'Sales Manager'),
+            ('lisa.davis', 'lisa.davis@tidygen-corp.com', 'Lisa', 'Davis', 'purchasing', 'Purchasing Manager'),
+            ('alex.garcia', 'alex.garcia@tidygen-corp.com', 'Alex', 'Garcia', 'web3', 'Web3 Manager'),
         ]
         
         for username, email, first_name, last_name, role_name, position in users_data:
@@ -392,11 +392,11 @@ class Command(BaseCommand):
 
         # Create employees
         employees_data = [
-            ('John', 'Doe', 'john.doe@ineat-corp.com', 'IT', 'Software Engineer', Decimal('75000')),
-            ('Jane', 'Smith', 'jane.smith@ineat-corp.com', 'Finance', 'Accountant', Decimal('65000')),
-            ('Mike', 'Johnson', 'mike.johnson@ineat-corp.com', 'HR', 'HR Specialist', Decimal('60000')),
-            ('Sarah', 'Wilson', 'sarah.wilson@ineat-corp.com', 'Sales', 'Sales Representative', Decimal('70000')),
-            ('David', 'Brown', 'david.brown@ineat-corp.com', 'Operations', 'Operations Manager', Decimal('80000')),
+            ('John', 'Doe', 'john.doe@tidygen-corp.com', 'IT', 'Software Engineer', Decimal('75000')),
+            ('Jane', 'Smith', 'jane.smith@tidygen-corp.com', 'Finance', 'Accountant', Decimal('65000')),
+            ('Mike', 'Johnson', 'mike.johnson@tidygen-corp.com', 'HR', 'HR Specialist', Decimal('60000')),
+            ('Sarah', 'Wilson', 'sarah.wilson@tidygen-corp.com', 'Sales', 'Sales Representative', Decimal('70000')),
+            ('David', 'Brown', 'david.brown@tidygen-corp.com', 'Operations', 'Operations Manager', Decimal('80000')),
         ]
         
         for first_name, last_name, email, dept_name, position, salary in employees_data:

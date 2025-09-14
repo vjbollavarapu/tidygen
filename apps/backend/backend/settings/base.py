@@ -1,5 +1,5 @@
 """
-Base settings for iNEAT ERP project.
+Base settings for TidyGen ERP project.
 """
 
 import os
@@ -103,7 +103,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 DATABASES = {
     'default': dj_database_url.parse(
-        config('DATABASE_URL', default='postgresql://ineat_user:ineat_password@localhost:5432/backend')
+        config('DATABASE_URL', default='postgresql://tidygen_user:tidygen_password@localhost:5432/backend')
     )
 }
 
@@ -243,7 +243,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 # API Documentation
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'iNEAT ERP API',
+    'TITLE': 'TidyGen ERP API',
     'DESCRIPTION': 'Web3-enabled Enterprise Resource Planning API',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
@@ -251,7 +251,7 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_PATH_PREFIX': '/api/',
     'SERVERS': [
         {'url': 'http://localhost:8000', 'description': 'Development server'},
-        {'url': 'https://api.ineat.com', 'description': 'Production server'},
+        {'url': 'https://api.tidygen.com', 'description': 'Production server'},
     ],
     'TAGS': [
         {'name': 'Authentication', 'description': 'User authentication and authorization'},
@@ -346,7 +346,7 @@ EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@ineat.com')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@tidygen.com')
 
 # File Storage
 DEFAULT_FILE_STORAGE = config('DEFAULT_FILE_STORAGE', default='django.core.files.storage.FileSystemStorage')

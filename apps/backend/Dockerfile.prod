@@ -1,4 +1,4 @@
-# Production Dockerfile for iNEAT ERP Backend
+# Production Dockerfile for TidyGen ERP Backend
 FROM python:3.11-slim
 
 # Set environment variables

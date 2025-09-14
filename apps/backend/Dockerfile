@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for iNEAT ERP Frontend
+# Multi-stage Dockerfile for TidyGen ERP Frontend
 FROM node:18-alpine as base
 
 # Install dependencies only when needed

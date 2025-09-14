@@ -1,5 +1,5 @@
 """
-Staging settings for iNEAT ERP project.
+Staging settings for TidyGen ERP project.
 """
 
 from .base import *
@@ -7,7 +7,7 @@ from .base import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='staging.ineat.com', cast=lambda v: [s.strip() for s in v.split(',')])
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='staging.tidygen.com', cast=lambda v: [s.strip() for s in v.split(',')])
 
 # Security settings for staging
 SECURE_SSL_REDIRECT = True
@@ -19,13 +19,13 @@ SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # CSRF settings for staging
 CSRF_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://staging.ineat.com', cast=lambda v: [s.strip() for s in v.split(',')])
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://staging.tidygen.com', cast=lambda v: [s.strip() for s in v.split(',')])
 
 # Session settings for staging
 SESSION_COOKIE_SECURE = True
 
 # CORS settings for staging
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='https://staging.ineat.com', cast=lambda v: [s.strip() for s in v.split(',')])
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='https://staging.tidygen.com', cast=lambda v: [s.strip() for s in v.split(',')])
 CORS_ALLOW_ALL_ORIGINS = False
 
 # Email configuration for staging
@@ -35,7 +35,7 @@ EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@staging.ineat.com')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@staging.tidygen.com')
 
 # Database configuration for staging
 DATABASES['default'].update({
@@ -57,8 +57,8 @@ CACHES['default'].update({
 })
 
 # Logging for staging
-LOGGING['handlers']['file']['filename'] = '/var/log/ineat/django.log'
-LOGGING['handlers']['audit']['filename'] = '/var/log/ineat/audit.log'
+LOGGING['handlers']['file']['filename'] = '/var/log/tidygen/django.log'
+LOGGING['handlers']['audit']['filename'] = '/var/log/tidygen/audit.log'
 
 # JWT settings for staging
 SIMPLE_JWT.update({
